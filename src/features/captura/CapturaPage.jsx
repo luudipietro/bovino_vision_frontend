@@ -1,11 +1,34 @@
+import CapturarFoto from "./components/CapturarFoto";
+import IdentificarAnimal from "./components/IdentificarAnimal";
+import ResultadoPesaje from "./components/ResultadoPesaje";
+import { useCaptura } from "./useCaptura";
+
 export default function CapturaPage() {
+  const captura = useCaptura();
+
+  if (!captura.sesionId) {
+    return <p className="text-sm text-gray-500">Iniciando sesión de captura…</p>;
+  }
+
+  if (captura.paso === "identificar") {
+    return <IdentificarAnimal onSeleccionar={captura.seleccionarAnimal} />;
+  }
+
+  if (captura.paso === "foto") {
+    return (
+      <CapturarFoto
+        animal={captura.animal}
+        captura={captura.captura}
+        cargando={captura.cargando}
+        error={captura.error}
+        onSubirFoto={captura.subirFoto}
+        onReintentar={captura.reintentarFoto}
+        onConfirmarPesaje={captura.confirmarPesaje}
+      />
+    );
+  }
+
   return (
-    <section>
-      <h1 className="text-xl font-semibold text-gray-900">Captura de pesaje</h1>
-      <p className="mt-2 text-gray-500">
-        Próximamente: identificar animal, tomar o importar foto y ver el peso
-        estimado.
-      </p>
-    </section>
+    <ResultadoPesaje resultado={captura.resultado} onPesarOtroAnimal={captura.pesarOtroAnimal} />
   );
 }
