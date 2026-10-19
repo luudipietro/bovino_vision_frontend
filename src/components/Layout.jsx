@@ -24,6 +24,12 @@ export default function Layout() {
             <NavLink to="/lotes" className={navLinkClass}>
               Lotes
             </NavLink>
+            <NavLink to="/panel" className={navLinkClass}>
+              Panel
+            </NavLink>
+            <NavLink to="/alertas" className={navLinkClass}>
+              Alertas
+            </NavLink>
           </nav>
         </div>
       </header>

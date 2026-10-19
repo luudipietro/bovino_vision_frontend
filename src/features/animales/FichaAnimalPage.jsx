@@ -1,18 +1,21 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { historialDePesajes, obtenerAnimal } from "../../api/animales";
+import { listarAlertasDeAnimal } from "../../api/alertas";
 
 export default function FichaAnimalPage() {
   const { id } = useParams();
   const [animal, setAnimal] = useState(null);
   const [pesajes, setPesajes] = useState([]);
+  const [alertas, setAlertas] = useState([]);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    Promise.all([obtenerAnimal(id), historialDePesajes(id)])
-      .then(([datosAnimal, historial]) => {
+    Promise.all([obtenerAnimal(id), historialDePesajes(id), listarAlertasDeAnimal(id)])
+      .then(([datosAnimal, historial, alertasAnimal]) => {
         setAnimal(datosAnimal);
         setPesajes(historial);
+        setAlertas(alertasAnimal);
       })
       .catch((err) => setError(err.message));
   }, [id]);
@@ -33,6 +36,21 @@ export default function FichaAnimalPage() {
         {animal.sexo && ` · ${animal.sexo}`}
       </p>
 
+      {alertas.length > 0 && (
+        <div className="mt-4 space-y-2">
+          {alertas.map((alerta) => (
+            <div
+              key={alerta.id}
+              className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800"
+            >
+              Variación de {alerta.variacion_pct > 0 ? "+" : ""}
+              {alerta.variacion_pct}% ({alerta.prioridad}) el{" "}
+              {new Date(alerta.fecha_generacion).toLocaleDateString()}
+            </div>
+          ))}
+        </div>
+      )}
+
       <h2 className="mt-6 text-sm font-semibold text-gray-700">Historial de pesajes</h2>
 
       {pesajes.length === 0 ? (
@@ -40,12 +58,20 @@ export default function FichaAnimalPage() {
       ) : (
         <ul className="mt-2 divide-y divide-gray-200 rounded-md border border-gray-200">
           {pesajes.map((pesaje) => (
-            <li key={pesaje.id} className="flex justify-between px-4 py-3 text-sm">
+            <li key={pesaje.id} className="flex items-center justify-between px-4 py-3 text-sm">
               <span className="text-gray-500">
                 {new Date(pesaje.fecha_pesaje).toLocaleString()}
               </span>
               {pesaje.estado === "estimado" ? (
-                <span className="font-medium text-gray-900">{pesaje.peso_kg} kg</span>
+                <span className="flex items-center gap-2">
+                  <span className="font-medium text-gray-900">{pesaje.peso_kg} kg</span>
+                  {pesaje.gmd_kg_dia != null && (
+                    <span className="text-xs text-gray-500">
+                      GMD {pesaje.gmd_kg_dia > 0 ? "+" : ""}
+                      {pesaje.gmd_kg_dia} kg/día
+                    </span>
+                  )}
+                </span>
               ) : (
                 <span className="text-red-600">Error en la estimación</span>
               )}
