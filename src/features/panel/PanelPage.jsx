@@ -1,9 +1,13 @@
+import { AlertTriangle, PawPrint, Scale, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
+import { listarAlertasDelRodeo } from "../../api/alertas";
 import { generarReporte, obtenerPanel } from "../../api/analitica";
 import EvolucionChart from "../../components/EvolucionChart";
+import StatCard from "../../components/StatCard";
 
 export default function PanelPage() {
   const [panel, setPanel] = useState(null);
+  const [cantidadAlertas, setCantidadAlertas] = useState(0);
   const [error, setError] = useState(null);
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
@@ -11,8 +15,11 @@ export default function PanelPage() {
   const [errorReporte, setErrorReporte] = useState(null);
 
   useEffect(() => {
-    obtenerPanel()
-      .then(setPanel)
+    Promise.all([obtenerPanel(), listarAlertasDelRodeo()])
+      .then(([datosPanel, alertas]) => {
+        setPanel(datosPanel);
+        setCantidadAlertas(alertas.length);
+      })
       .catch((err) => setError(err.message));
   }, []);
 
@@ -27,85 +34,94 @@ export default function PanelPage() {
   }
 
   if (error) return <p className="text-sm text-red-600">{error}</p>;
-  if (!panel) return <p className="text-sm text-gray-500">Cargando…</p>;
+  if (!panel) return <p className="text-sm text-stone-400">Cargando…</p>;
 
   return (
     <section>
-      <h1 className="text-xl font-semibold text-gray-900">Panel del rodeo</h1>
+      <h1 className="text-xl font-bold text-stone-900">Panel del rodeo</h1>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Animales con pesajes" value={panel.cantidad_animales} />
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard icon={PawPrint} label="Animales" value={panel.cantidad_animales} />
         <StatCard
+          icon={Scale}
           label="Peso promedio"
           value={panel.peso_promedio_kg != null ? `${panel.peso_promedio_kg} kg` : "—"}
         />
         <StatCard
+          icon={TrendingUp}
           label="GMD promedio"
           value={panel.gmd_promedio_kg_dia != null ? `${panel.gmd_promedio_kg_dia} kg/día` : "—"}
         />
+        <StatCard
+          icon={AlertTriangle}
+          label="Alertas activas"
+          value={cantidadAlertas}
+          tone={cantidadAlertas > 0 ? "danger" : "neutral"}
+        />
       </div>
 
-      <h2 className="mt-6 text-sm font-semibold text-gray-700">Evolución del peso promedio</h2>
-      <div className="mt-2 rounded-md border border-gray-200 bg-white p-4">
-        <EvolucionChart puntos={panel.evolucion_peso_promedio} />
-      </div>
-
-      <h2 className="mt-6 text-sm font-semibold text-gray-700">Reporte por lapso de tiempo</h2>
-      <form onSubmit={consultarReporte} className="mt-2 flex flex-wrap items-end gap-2">
-        <label className="text-sm text-gray-600">
-          Desde
-          <input
-            type="date"
-            value={desde}
-            onChange={(e) => setDesde(e.target.value)}
-            required
-            className="mt-1 block rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-emerald-500 focus:outline-none"
-          />
-        </label>
-        <label className="text-sm text-gray-600">
-          Hasta
-          <input
-            type="date"
-            value={hasta}
-            onChange={(e) => setHasta(e.target.value)}
-            required
-            className="mt-1 block rounded-md border border-gray-300 px-2 py-1 text-sm focus:border-emerald-500 focus:outline-none"
-          />
-        </label>
-        <button
-          type="submit"
-          className="rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700"
-        >
-          Generar
-        </button>
-      </form>
-
-      {errorReporte && <p className="mt-2 text-sm text-red-600">{errorReporte}</p>}
-
-      {reporte && (
-        <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <StatCard label="Pesajes en el período" value={reporte.cantidad_pesajes} />
-          <StatCard
-            label="Peso promedio"
-            value={reporte.peso_promedio_kg != null ? `${reporte.peso_promedio_kg} kg` : "—"}
-          />
-          <StatCard
-            label="GMD promedio"
-            value={
-              reporte.gmd_promedio_kg_dia != null ? `${reporte.gmd_promedio_kg_dia} kg/día` : "—"
-            }
-          />
+      <div className="mt-6 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+        <p className="flex items-center gap-1.5 text-sm font-semibold text-stone-700">
+          <TrendingUp className="h-4 w-4" /> Evolución del peso promedio
+        </p>
+        <div className="mt-3">
+          <EvolucionChart puntos={panel.evolucion_peso_promedio} />
         </div>
-      )}
-    </section>
-  );
-}
+      </div>
 
-function StatCard({ label, value }) {
-  return (
-    <div className="rounded-md border border-gray-200 bg-white p-4">
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-gray-900">{value}</p>
-    </div>
+      <div className="mt-6 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+        <p className="text-sm font-semibold text-stone-700">Reporte por lapso de tiempo</p>
+        <form onSubmit={consultarReporte} className="mt-3 flex flex-wrap items-end gap-2">
+          <label className="text-sm text-stone-500">
+            Desde
+            <input
+              type="date"
+              value={desde}
+              onChange={(e) => setDesde(e.target.value)}
+              required
+              className="mt-1 block rounded-xl border border-stone-300 px-2 py-1.5 text-sm focus:border-green-700 focus:outline-none"
+            />
+          </label>
+          <label className="text-sm text-stone-500">
+            Hasta
+            <input
+              type="date"
+              value={hasta}
+              onChange={(e) => setHasta(e.target.value)}
+              required
+              className="mt-1 block rounded-xl border border-stone-300 px-2 py-1.5 text-sm focus:border-green-700 focus:outline-none"
+            />
+          </label>
+          <button
+            type="submit"
+            className="rounded-xl bg-green-900 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
+          >
+            Generar
+          </button>
+        </form>
+
+        {errorReporte && <p className="mt-2 text-sm text-red-600">{errorReporte}</p>}
+
+        {reporte && (
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <StatCard label="Pesajes en el período" value={reporte.cantidad_pesajes} />
+            <StatCard
+              icon={Scale}
+              label="Peso promedio"
+              value={reporte.peso_promedio_kg != null ? `${reporte.peso_promedio_kg} kg` : "—"}
+            />
+            <StatCard
+              icon={TrendingUp}
+              label="GMD promedio"
+              value={
+                reporte.gmd_promedio_kg_dia != null
+                  ? `${reporte.gmd_promedio_kg_dia} kg/día`
+                  : "—"
+              }
+            />
+          </div>
+        )}
+      </div>
+    </section>
   );
 }

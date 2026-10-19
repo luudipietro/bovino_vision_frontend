@@ -23,8 +23,8 @@ export default function BackendStatus() {
   }[status];
 
   return (
-    <div className="flex items-center gap-2 text-sm text-gray-500">
-      <span className={`h-2 w-2 rounded-full ${dotColor}`} />
+    <div className="flex items-center gap-2 text-xs text-stone-400">
+      <span className={`h-2 w-2 shrink-0 rounded-full ${dotColor}`} />
       {label}
     </div>
   );

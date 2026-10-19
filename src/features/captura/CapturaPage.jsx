@@ -7,7 +7,7 @@ export default function CapturaPage() {
   const captura = useCaptura();
 
   if (!captura.sesionId) {
-    return <p className="text-sm text-gray-500">Iniciando sesión de captura…</p>;
+    return <p className="text-sm text-stone-400">Iniciando sesión de captura…</p>;
   }
 
   if (captura.paso === "identificar") {

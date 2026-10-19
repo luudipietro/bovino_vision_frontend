@@ -1,7 +1,10 @@
+import { ArrowDown, ArrowUp, Calendar, Dna, LayoutGrid, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { historialDePesajes, obtenerAnimal } from "../../api/animales";
 import { listarAlertasDeAnimal } from "../../api/alertas";
+import { historialDePesajes, obtenerAnimal } from "../../api/animales";
+import Badge from "../../components/Badge";
+import EvolucionChart from "../../components/EvolucionChart";
 
 export default function FichaAnimalPage() {
   const { id } = useParams();
@@ -21,27 +24,50 @@ export default function FichaAnimalPage() {
   }, [id]);
 
   if (error) return <p className="text-sm text-red-600">{error}</p>;
-  if (!animal) return <p className="text-sm text-gray-500">Cargando…</p>;
+  if (!animal) return <p className="text-sm text-stone-400">Cargando…</p>;
+
+  const exitosos = pesajes.filter((p) => p.estado === "estimado");
+  const ultimoPesaje = exitosos[0] ?? null;
+  const pesajeAnterior = exitosos[1] ?? null;
+  const delta =
+    ultimoPesaje && pesajeAnterior ? ultimoPesaje.peso_kg - pesajeAnterior.peso_kg : null;
+
+  const puntosEvolucion = [...exitosos]
+    .reverse()
+    .map((p) => ({ fecha: p.fecha_pesaje.slice(0, 10), peso_promedio_kg: p.peso_kg }));
 
   return (
     <section>
-      <Link to="/animales" className="text-sm text-emerald-700 hover:underline">
+      <Link to="/animales" className="text-sm font-semibold text-green-800 hover:underline">
         ← Volver al rodeo
       </Link>
 
-      <h1 className="mt-2 text-xl font-semibold text-gray-900">{animal.identificador}</h1>
-      <p className="text-sm text-gray-500">
-        {animal.lote_id ? `Lote #${animal.lote_id}` : "Sin lote asignado"}
-        {animal.raza && ` · ${animal.raza}`}
-        {animal.sexo && ` · ${animal.sexo}`}
-      </p>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <h1 className="text-2xl font-bold text-stone-900">{animal.identificador}</h1>
+        {animal.sexo && <Badge tone="brand">{animal.sexo}</Badge>}
+      </div>
+
+      <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-stone-500">
+        <span className="flex items-center gap-1.5">
+          <Dna className="h-4 w-4" /> {animal.raza ?? "Raza sin registrar"}
+        </span>
+        <span className="flex items-center gap-1.5">
+          <LayoutGrid className="h-4 w-4" />
+          {animal.lote_codigo ? `Lote ${animal.lote_codigo}` : "Sin lote asignado"}
+        </span>
+        {animal.fecha_nacimiento && (
+          <span className="flex items-center gap-1.5">
+            <Calendar className="h-4 w-4" /> Nació {animal.fecha_nacimiento}
+          </span>
+        )}
+      </div>
 
       {alertas.length > 0 && (
         <div className="mt-4 space-y-2">
           {alertas.map((alerta) => (
             <div
               key={alerta.id}
-              className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800"
+              className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800"
             >
               Variación de {alerta.variacion_pct > 0 ? "+" : ""}
               {alerta.variacion_pct}% ({alerta.prioridad}) el{" "}
@@ -51,30 +77,70 @@ export default function FichaAnimalPage() {
         </div>
       )}
 
-      <h2 className="mt-6 text-sm font-semibold text-gray-700">Historial de pesajes</h2>
+      <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,260px)_1fr]">
+        <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">
+            Último pesaje
+          </p>
+          <div className="mt-2 flex items-baseline gap-2">
+            <p className="text-4xl font-bold text-green-900">
+              {ultimoPesaje ? ultimoPesaje.peso_kg : "—"}
+            </p>
+            {ultimoPesaje && <span className="text-lg text-stone-400">kg</span>}
+          </div>
+          {delta != null && (
+            <Badge tone={delta >= 0 ? "brand" : "danger"} className="mt-2 gap-1">
+              {delta >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+              {delta >= 0 ? "+" : ""}
+              {delta.toFixed(1)} kg
+            </Badge>
+          )}
+          {ultimoPesaje && (
+            <p className="mt-3 text-xs text-stone-400">
+              {new Date(ultimoPesaje.fecha_pesaje).toLocaleString()}
+            </p>
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-stone-700">
+            <TrendingUp className="h-4 w-4" /> Curva de crecimiento
+          </p>
+          <div className="mt-3">
+            <EvolucionChart puntos={puntosEvolucion} />
+          </div>
+        </div>
+      </div>
+
+      <h2 className="mt-6 text-sm font-semibold text-stone-700">
+        Registro cronológico de pesajes
+      </h2>
 
       {pesajes.length === 0 ? (
-        <p className="mt-2 text-sm text-gray-500">Todavía no tiene pesajes registrados.</p>
+        <p className="mt-2 text-sm text-stone-400">Todavía no tiene pesajes registrados.</p>
       ) : (
-        <ul className="mt-2 divide-y divide-gray-200 rounded-md border border-gray-200">
+        <ul className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {pesajes.map((pesaje) => (
-            <li key={pesaje.id} className="flex items-center justify-between px-4 py-3 text-sm">
-              <span className="text-gray-500">
-                {new Date(pesaje.fecha_pesaje).toLocaleString()}
-              </span>
+            <li
+              key={pesaje.id}
+              className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm"
+            >
               {pesaje.estado === "estimado" ? (
-                <span className="flex items-center gap-2">
-                  <span className="font-medium text-gray-900">{pesaje.peso_kg} kg</span>
+                <>
+                  <p className="text-lg font-bold text-stone-900">{pesaje.peso_kg} kg</p>
                   {pesaje.gmd_kg_dia != null && (
-                    <span className="text-xs text-gray-500">
-                      GMD {pesaje.gmd_kg_dia > 0 ? "+" : ""}
+                    <Badge tone={pesaje.gmd_kg_dia >= 0 ? "brand" : "danger"} className="mt-1">
+                      GMD {pesaje.gmd_kg_dia >= 0 ? "+" : ""}
                       {pesaje.gmd_kg_dia} kg/día
-                    </span>
+                    </Badge>
                   )}
-                </span>
+                </>
               ) : (
-                <span className="text-red-600">Error en la estimación</span>
+                <p className="text-sm font-semibold text-red-600">Error en la estimación</p>
               )}
+              <p className="mt-2 text-xs text-stone-400">
+                {new Date(pesaje.fecha_pesaje).toLocaleString()}
+              </p>
             </li>
           ))}
         </ul>
