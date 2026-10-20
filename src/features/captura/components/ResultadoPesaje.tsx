@@ -1,5 +1,8 @@
-import { AlertTriangle, ArrowDown, ArrowUp, CheckCircle2, Scale } from "lucide-react";
+import { ArrowDown, ArrowUp, CircleCheck } from "lucide-react";
 import Badge from "../../../components/Badge";
+import Button from "../../../components/Button";
+import { Notice } from "../../../components/Feedback";
+import { formatearNumero } from "../../../lib/formato";
 import { describirAlerta } from "../../alertas/textos";
 import type { ResultadoCaptura } from "../useCaptura";
 
@@ -28,23 +31,16 @@ export default function ResultadoPesaje({
           onConfirmar={onConfirmar}
         />
       ) : (
-        <div className="mt-4 rounded-3xl border border-red-300 bg-red-50 p-8 text-center text-red-800">
-          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white">
-            <AlertTriangle className="h-7 w-7" />
-          </span>
-          <p className="mt-3 font-semibold">No se pudo estimar el peso</p>
-          <p className="mt-1 text-sm">{resultado.captura.motivo_fallo}</p>
-          <p className="mt-2 text-xs">Registrá una nueva captura para volver a intentarlo.</p>
-        </div>
+        <Notice tone="danger">
+          <p className="text-sm font-semibold">No se pudo estimar el peso</p>
+          <p className="mt-1">{resultado.captura.motivo_fallo}</p>
+          <p className="mt-1">Registrá una nueva captura para volver a intentarlo.</p>
+        </Notice>
       )}
 
-      <button
-        type="button"
-        onClick={onPesarOtroAnimal}
-        className="mt-6 w-full rounded-xl bg-green-900 px-4 py-3 text-sm font-semibold text-white hover:bg-green-800"
-      >
+      <Button size="lg" onClick={onPesarOtroAnimal} className="mt-6 w-full">
         Pesar otro animal
-      </button>
+      </Button>
     </section>
   );
 }
@@ -61,52 +57,62 @@ function PesoEstimado({
   const diferencia = pesaje.ultimo_peso_previo
     ? pesaje.peso_kg - pesaje.ultimo_peso_previo.peso_kg
     : null;
+  const decimales = Number.isInteger(pesaje.peso_kg) ? 0 : 1;
 
   return (
     <>
-      <h1 className="text-xl font-bold text-stone-900">Resultado — {pesaje.animal_identificador}</h1>
+      <p className="text-sm text-neutral-500">
+        Caravana <span className="font-bold text-neutral-800">{pesaje.animal_identificador}</span>
+      </p>
 
-      <div className="mt-4 rounded-3xl border border-lime-300 bg-lime-50 p-8 text-center">
-        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-900 text-white">
-          <Scale className="h-7 w-7" />
-        </span>
-        <p className="mt-3 text-sm font-semibold uppercase tracking-wide text-green-800">
-          Peso estimado
+      <div className="mt-4 rounded-[14px] bg-green-50 px-6 py-8 text-center">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-green-600">
+          PESO ESTIMADO
         </p>
-        <p className="mt-1 text-5xl font-bold text-green-900">{pesaje.peso_kg} kg</p>
+        <p className="mt-2 flex items-baseline justify-center gap-2 text-neutral-800">
+          <span className="text-6xl font-bold tracking-tight">
+            {formatearNumero(pesaje.peso_kg, decimales)}
+          </span>
+          <span className="text-xl font-medium text-neutral-500">kg</span>
+        </p>
         {pesaje.lote_codigo && (
-          <p className="mt-2 text-sm text-green-800">Lote {pesaje.lote_codigo}</p>
+          <p className="mt-3 text-sm text-neutral-600">Lote {pesaje.lote_codigo}</p>
         )}
-        {pesaje.alerta ? (
-          <Badge tone="danger" className="mt-3">
-            {describirAlerta(pesaje.alerta)}
+        {!pesaje.alerta && diferencia != null && (
+          <Badge tone="brand" className="mt-3 gap-1">
+            {diferencia >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+            {diferencia >= 0 ? "+" : "-"}
+            {formatearNumero(Math.abs(diferencia), 1)} kg vs. anterior
           </Badge>
-        ) : (
-          diferencia != null && (
-            <Badge tone="brand" className="mt-3 gap-1">
-              {diferencia >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-              {diferencia >= 0 ? "+" : ""}
-              {diferencia.toFixed(1)} kg vs. anterior
-            </Badge>
-          )
         )}
       </div>
 
+      {pesaje.alerta && (
+        <Notice tone="danger" className="mt-4">
+          {describirAlerta(pesaje.alerta)}
+        </Notice>
+      )}
+
       {captura.fecha_revision ? (
-        <p className="mt-4 flex items-center justify-center gap-1.5 text-sm font-semibold text-green-800">
-          <CheckCircle2 className="h-4 w-4" /> Resultado confirmado
+        <p className="mt-4 flex items-center justify-center gap-2 text-sm font-semibold text-green-600">
+          <CircleCheck className="h-5 w-5" /> Resultado confirmado
         </p>
       ) : (
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="lg"
           disabled={cargando}
           onClick={onConfirmar}
-          className="mt-4 w-full rounded-xl border border-green-900 px-4 py-3 text-sm font-semibold text-green-900 hover:bg-lime-50 disabled:opacity-50"
+          className="mt-4 w-full"
         >
           Confirmar resultado
-        </button>
+        </Button>
       )}
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && (
+        <Notice tone="danger" className="mt-3">
+          {error}
+        </Notice>
+      )}
     </>
   );
 }

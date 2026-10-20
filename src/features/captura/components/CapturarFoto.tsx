@@ -1,6 +1,8 @@
-import { Camera, ImagePlus, RefreshCcw, ScanLine } from "lucide-react";
+import { ArrowRight, Camera, ImagePlus, RefreshCcw } from "lucide-react";
 import { type ChangeEvent, useRef, useState } from "react";
 import type { Animal, Captura } from "../../../api/tipos";
+import Button from "../../../components/Button";
+import { Loading, Notice } from "../../../components/Feedback";
 
 interface CapturarFotoProps {
   animal: Animal;
@@ -11,6 +13,8 @@ interface CapturarFotoProps {
   onReintentar: () => void;
   onProcesarPesaje: () => void;
 }
+
+const esquina = "absolute h-8 w-8 border-green-300";
 
 export default function CapturarFoto({
   animal,
@@ -41,9 +45,14 @@ export default function CapturarFoto({
 
   return (
     <section>
-      <h1 className="text-xl font-bold text-stone-900">Captura — {animal.identificador}</h1>
+      <h2 className="text-2xl font-medium text-neutral-800">
+        Foto del <span className="font-bold">animal</span>
+      </h2>
+      <p className="mt-1 text-sm text-neutral-500">
+        Caravana <span className="font-bold text-neutral-800">{animal.identificador}</span>
+      </p>
 
-      <div className="relative mt-4 flex aspect-[4/5] w-full items-center justify-center overflow-hidden rounded-3xl bg-stone-900">
+      <div className="relative mx-auto mt-5 aspect-[4/5] max-h-[560px] w-full overflow-hidden rounded-[14px] bg-green-900">
         {previewUrl ? (
           <img
             src={previewUrl}
@@ -51,38 +60,41 @@ export default function CapturarFoto({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="flex flex-col items-center gap-3 text-stone-400">
-            <ScanLine className="h-12 w-12" />
-            <p className="text-sm">Alineá el animal con la guía</p>
-          </div>
-        )}
-        {!previewUrl && (
-          <span className="absolute left-4 top-4 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white">
-            ESPERANDO ANIMAL
-          </span>
+          <>
+            <span className={`${esquina} left-5 top-5 rounded-tl-lg border-l-4 border-t-4`} />
+            <span className={`${esquina} right-5 top-5 rounded-tr-lg border-r-4 border-t-4`} />
+            <span className={`${esquina} bottom-5 left-5 rounded-bl-lg border-b-4 border-l-4`} />
+            <span className={`${esquina} bottom-5 right-5 rounded-br-lg border-b-4 border-r-4`} />
+            <span className="absolute inset-x-10 top-1/2 border-t-2 border-dashed border-green-300/70" />
+            <span className="absolute left-1/2 top-6 -translate-x-1/2 whitespace-nowrap rounded-full bg-green-900/70 px-3 py-1 text-[11px] font-semibold tracking-wider text-green-300 ring-1 ring-green-300/30">
+              ESPERANDO ANIMAL
+            </span>
+            <p className="absolute inset-x-0 bottom-10 text-center text-xs text-green-300">
+              Alineá el animal con la guía
+            </p>
+          </>
         )}
       </div>
 
       {!captura && (
-        <div className="mt-4 flex gap-3">
-          <button
-            type="button"
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <Button
+            size="lg"
+            icon={Camera}
             disabled={cargando}
             onClick={() => inputCamara.current?.click()}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-green-900 px-4 py-3 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-50"
           >
-            <Camera className="h-4 w-4" />
             Usar cámara
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="secondary"
+            size="lg"
+            icon={ImagePlus}
             disabled={cargando}
             onClick={() => inputGaleria.current?.click()}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-stone-300 px-4 py-3 text-sm font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-50"
           >
-            <ImagePlus className="h-4 w-4" />
             Galería
-          </button>
+          </Button>
           <input
             ref={inputCamara}
             type="file"
@@ -101,34 +113,41 @@ export default function CapturarFoto({
         </div>
       )}
 
-      {cargando && <p className="mt-4 text-sm text-stone-500">Subiendo foto…</p>}
-      {error && captura && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      {cargando && <Loading>Subiendo foto…</Loading>}
+      {error && captura && (
+        <Notice tone="danger" className="mt-4">
+          {error}
+        </Notice>
+      )}
 
       {error && !captura && (
-        <div className="mt-4 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
-          <p>No se pudo registrar la foto: {error}</p>
-          <button
-            type="button"
-            onClick={reintentar}
-            className="mt-2 flex items-center gap-1.5 rounded-xl bg-amber-600 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-700"
-          >
-            <RefreshCcw className="h-4 w-4" />
-            Sacar otra foto
-          </button>
-        </div>
+        <Notice
+          tone="warning"
+          className="mt-4"
+          action={
+            <Button size="lg" icon={RefreshCcw} onClick={reintentar} className="w-full sm:w-auto">
+              Sacar otra foto
+            </Button>
+          }
+        >
+          No se pudo registrar la foto: {error}
+        </Notice>
       )}
 
       {captura && (
-        <div className="mt-4 rounded-2xl border border-lime-300 bg-lime-50 p-4 text-sm text-green-900">
-          <p className="font-semibold">Foto cargada. Lista para estimar el peso.</p>
-          <button
-            type="button"
+        <div className="mt-5 space-y-3">
+          <Notice tone="success">
+            <p className="font-semibold">Foto cargada. Lista para estimar el peso.</p>
+          </Notice>
+          <Button
+            size="lg"
+            iconRight={ArrowRight}
             disabled={cargando}
             onClick={onProcesarPesaje}
-            className="mt-2 rounded-xl bg-green-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-50"
+            className="w-full"
           >
             Procesar pesaje
-          </button>
+          </Button>
         </div>
       )}
     </section>
