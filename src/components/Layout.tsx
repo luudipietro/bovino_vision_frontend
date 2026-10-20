@@ -38,7 +38,7 @@ function DateTimePill() {
     <p className="flex h-[31px] items-center gap-3 rounded-full bg-neutral-100 px-5 text-[13px] font-bold tabular-nums text-neutral-800">
       {now.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" })}
       <span aria-hidden="true">|</span>
-      {now.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
+      {now.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" })}
     </p>
   );
 }

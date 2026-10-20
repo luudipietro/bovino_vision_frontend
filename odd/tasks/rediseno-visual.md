@@ -15,10 +15,10 @@ Verificación: `npm run typecheck`, `npm run lint`, `npm run test` y `npm run bu
 | ID | Specs | Ruta | Estado | Evidencia / commit |
 | --- | --- | --- | --- | --- |
 | T1 | S1, S2, S3 | inline | hecha | Tokens del design system en `@theme` (sin colores de Tailwind por defecto), Montserrat, layout con sidebar y pastilla de fecha, componentes `Button`, `Badge`, `PageHeader`, `Card`, `KpiTile`, `StatCard`, `Tabs`, `Field`, `Table`, `Feedback`, `ProgressBar`, `Stepper`, `LineChart` y formato argentino (`lib/formato.ts`, 5 tests). typecheck 0, lint con los 2 warnings previos, 19 tests verdes. |
-| T2 | S1-S3 | delegada (paralelo) | pendiente | Panel y alertas. |
-| T3 | S1-S3 | delegada (paralelo) | pendiente | Rodeo, ficha del animal y lotes. |
-| T4 | S1-S3 | delegada (paralelo) | pendiente | Flujo de captura. |
-| T5 | S1-S3 | inline | pendiente | Verificación en navegador, docs. |
+| T2 | S1-S3 | delegada (paralelo) | hecha | Panel con tiles KPI, curva, cobertura de GMD y distribución por lote; alertas en filas tarjeta; `formatearGmd` en formato argentino (RED 3 tests, GREEN). typecheck 0, lint 2 previos, 19 tests, build OK. |
+| T3 | S1-S3 | delegada (paralelo) | hecha | Rodeo en tabla con búsqueda y filtro de lote, ficha con tiles, curva y timeline (`LineaDePesajes`), lotes con participación. typecheck 0, lint 2 previos, 19 tests, build OK. |
+| T4 | S1-S3 | delegada (paralelo) | hecha | Asistente de 4 pasos con `Stepper`, visor con encuadre, estimación y resultado. Pasos 2-4 revisados por código (headless solo captura el paso 1). typecheck 0, lint 2 previos, 19 tests, build OK. |
+| T5 | S1-S3 | inline | pendiente | Recorrido real a 390 px (Chrome headless no baja de 500 px), ajuste de ancho inicial de `LineChart`, alertas de demo, docs. |
 
 Ruta: T1 inline porque todas las pantallas dependen de ella. T2-T4 en paralelo: tres unidades independientes con superficies disjuntas (`src/features/panel` + `src/features/alertas/AlertasPage.tsx`; `src/features/animales` + `src/features/lotes`; `src/features/captura/components` + `CapturaPage.tsx`), cada una de varios archivos.
 
@@ -27,3 +27,5 @@ Ruta: T1 inline porque todas las pantallas dependen de ella. T2-T4 en paralelo: 
 - **L1 (usuario, 2026-10-20):** "quiero que rediseñes el frontend de BovinoVision. podes usar como referencia este diseño de figma https://www.figma.com/design/CsaLpPcrnM9EbXagAavF4P/ZOCO?node-id=0-1 que es de otro sistema diferente a este, pero trata de copiar los estilos, las fuentes, forma de los iconos, graficos, etc. usando la paleta de colores que se define en el design system de BovinoVision en Claude Design https://claude.ai/design/p/dc270f40-3c58-4417-b434-14460761eeb2?via=share"
 - **L2 (2026-10-20):** otra sesión estaba editando el repo del frontend (Vitest y búsqueda); para no pisarla, el rediseño se hace en un worktree aparte desde `1ff3d42`. El emblema `public/logo-mark.png` sale de `assets/logo-mark.png` del design system. El design system pide Material Symbols y Lato, pero el usuario pidió copiar fuentes e iconos del Figma: se usan Montserrat y Lucide (ya instalado) y del design system se toma la paleta.
 - **L3 (usuario, 2026-10-20):** "podes usar ODD y subagentes si queres, y si es mejor para optimizar tokens y calidad"
+- **L4 (2026-10-20):** se borró el adaptador `EvolucionChart`. Datos de demo cargados por la API en la base local de Docker (lotes A-12, B-04, C-07; 9 animales con 5 pesajes cada uno, todos de 400 kg por el estimador simulado).
+- **L5 (usuario, 2026-10-20):** "antes de que te quedes sin tokens, mergea lo que hay hecho en la rama de rediseño a la rama manu"
