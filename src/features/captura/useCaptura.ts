@@ -92,10 +92,13 @@ export function useCaptura() {
 
   async function procesarPesaje() {
     if (!captura) return;
+    const consulta = consultaVigente.current;
     setCargando(true);
     setError(null);
     try {
       await solicitarPesaje(captura.id);
+      // The operator may have left the page while the request was in flight.
+      if (consulta !== consultaVigente.current) return;
       setPaso("procesando");
     } catch (err) {
       setError(mensajeDeError(err));
