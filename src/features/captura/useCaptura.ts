@@ -7,17 +7,16 @@ import {
 } from "../../api/capturas";
 import { mensajeDeError } from "../../api/client";
 import { obtenerPesaje, solicitarPesaje } from "../../api/pesajes";
-import type { Animal, Captura, Pesaje, Uuid } from "../../api/tipos";
+import type { Animal, Captura, Uuid } from "../../api/tipos";
+import { esperarResultado, type ResultadoCaptura } from "./esperarResultado";
 
 const INTERVALO_CONSULTA_MS = 1000;
 
 export type PasoCaptura = "identificar" | "foto" | "procesando" | "resultado";
 
-export type ResultadoCaptura =
-  | { tipo: "estimado"; captura: Captura; pesaje: Pesaje }
-  | { tipo: "fallido"; captura: Captura };
+export type { ResultadoCaptura };
 
-const esperar = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const esperar = () => new Promise<void>((resolve) => setTimeout(resolve, INTERVALO_CONSULTA_MS));
 
 export function useCaptura() {
   const [idSesion, setIdSesion] = useState<Uuid | null>(null);
@@ -61,32 +60,23 @@ export function useCaptura() {
     }
   }
 
-  /** Polls the capture until the background estimation finishes. */
-  async function esperarResultado(idCaptura: Uuid) {
+  async function consultarHastaTerminar(idCaptura: Uuid) {
     const consulta = ++consultaVigente.current;
+    const sigueVigente = () => consulta === consultaVigente.current;
     setError(null);
     try {
-      for (;;) {
-        const actual = await obtenerCaptura(idCaptura);
-        if (consulta !== consultaVigente.current) return;
-        setCaptura(actual);
-        if (actual.estado === "fallida") {
-          setResultado({ tipo: "fallido", captura: actual });
-          setPaso("resultado");
-          return;
-        }
-        if (actual.estado === "procesada" && actual.id_evento_pesaje) {
-          const pesaje = await obtenerPesaje(actual.id_evento_pesaje);
-          if (consulta !== consultaVigente.current) return;
-          setResultado({ tipo: "estimado", captura: actual, pesaje });
-          setPaso("resultado");
-          return;
-        }
-        await esperar(INTERVALO_CONSULTA_MS);
-        if (consulta !== consultaVigente.current) return;
-      }
+      const final = await esperarResultado(idCaptura, {
+        obtenerCaptura,
+        obtenerPesaje,
+        esperar,
+        sigueVigente,
+        alActualizar: setCaptura,
+      });
+      if (!final) return;
+      setResultado(final);
+      setPaso("resultado");
     } catch (err) {
-      if (consulta === consultaVigente.current) setError(mensajeDeError(err));
+      if (sigueVigente()) setError(mensajeDeError(err));
     }
   }
 
@@ -106,11 +96,11 @@ export function useCaptura() {
     } finally {
       setCargando(false);
     }
-    await esperarResultado(captura.id);
+    await consultarHastaTerminar(captura.id);
   }
 
   function reintentarConsulta() {
-    if (captura) void esperarResultado(captura.id);
+    if (captura) void consultarHastaTerminar(captura.id);
   }
 
   async function confirmarResultado() {

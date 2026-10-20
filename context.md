@@ -62,7 +62,8 @@ lugar (por ejemplo, "Alertas activas" en vez de "Estado Sanitario" en el panel).
 ## Pesaje asíncrono
 
 `useCaptura` registra la foto, pide el pesaje (202) y consulta el estado de la captura cada
-segundo hasta `procesada` o `fallida`. La consulta no tiene tope porque la cola del backend
+segundo hasta `procesada` o `fallida`. La espera vive en `esperarResultado.ts`, una función
+pura con sus dependencias inyectadas, para poder testearla sin React. La consulta no tiene tope porque la cola del backend
 reintenta sola y siempre termina en uno de esos estados; se corta al salir de la página o al
 pesar otro animal. Una captura `fallida` no se reintenta: se registra una nueva. En
 desarrollo, `StrictMode` monta la página dos veces y abre dos sesiones de captura (ya pasaba

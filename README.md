@@ -29,12 +29,16 @@ Por defecto espera el backend en `http://localhost:8000` (ver `.env.example` →
 
 ```bash
 npm run typecheck   # tsc --noEmit, modo estricto
+npm run test        # Vitest (npm run test:watch para modo interactivo)
 npm run lint        # oxlint
 npm run build       # chequea tipos y genera dist/
 ```
 
-No hay tests automatizados todavía: los cambios se validan con esos tres comandos y un
-recorrido en el navegador contra la API local.
+Los tests (`*.test.ts` junto al código) corren en Node y cubren la lógica sin interfaz: el
+cliente HTTP, los textos de alertas y la espera del pesaje (`esperarResultado`). Los
+componentes React todavía no tienen tests porque requieren un DOM simulado
+(`@testing-library/react` + `jsdom`); los cambios de pantalla se validan con un recorrido en
+el navegador contra la API local.
 
 ## Contrato con el backend
 
