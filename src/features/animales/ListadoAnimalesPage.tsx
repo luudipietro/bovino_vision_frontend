@@ -1,18 +1,20 @@
 import { PawPrint, Plus, Scale, Search } from "lucide-react";
-import { useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { crearAnimal, listarAnimales } from "../../api/animales";
+import { mensajeDeError } from "../../api/client";
 import { listarLotes } from "../../api/lotes";
+import type { Animal, Lote, Uuid } from "../../api/tipos";
 import Badge from "../../components/Badge";
 import StatCard from "../../components/StatCard";
 
 export default function ListadoAnimalesPage() {
   const [busqueda, setBusqueda] = useState("");
-  const [loteId, setLoteId] = useState(null);
-  const [lotes, setLotes] = useState([]);
-  const [animales, setAnimales] = useState([]);
+  const [idLote, setIdLote] = useState<Uuid | null>(null);
+  const [lotes, setLotes] = useState<Lote[]>([]);
+  const [animales, setAnimales] = useState<Animal[]>([]);
   const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [mostrarAlta, setMostrarAlta] = useState(false);
   const [nuevoIdentificador, setNuevoIdentificador] = useState("");
 
@@ -24,13 +26,13 @@ export default function ListadoAnimalesPage() {
 
   useEffect(() => {
     setCargando(true);
-    listarAnimales({ q: busqueda || undefined, loteId: loteId || undefined })
+    listarAnimales({ q: busqueda, idLote })
       .then(setAnimales)
-      .catch((err) => setError(err.message))
+      .catch((err: unknown) => setError(mensajeDeError(err)))
       .finally(() => setCargando(false));
-  }, [busqueda, loteId]);
+  }, [busqueda, idLote]);
 
-  async function altaRapida(event) {
+  async function altaRapida(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const identificador = nuevoIdentificador.trim();
     if (!identificador) return;
@@ -40,7 +42,7 @@ export default function ListadoAnimalesPage() {
       setNuevoIdentificador("");
       setMostrarAlta(false);
     } catch (err) {
-      setError(err.message);
+      setError(mensajeDeError(err));
     }
   }
 
@@ -95,9 +97,9 @@ export default function ListadoAnimalesPage() {
       <div className="mt-3 flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={() => setLoteId(null)}
+          onClick={() => setIdLote(null)}
           className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-            loteId === null ? "bg-green-900 text-white" : "bg-stone-100 text-stone-600"
+            idLote === null ? "bg-green-900 text-white" : "bg-stone-100 text-stone-600"
           }`}
         >
           Todos
@@ -106,9 +108,9 @@ export default function ListadoAnimalesPage() {
           <button
             key={lote.id}
             type="button"
-            onClick={() => setLoteId(lote.id)}
+            onClick={() => setIdLote(lote.id)}
             className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-              loteId === lote.id ? "bg-green-900 text-white" : "bg-stone-100 text-stone-600"
+              idLote === lote.id ? "bg-green-900 text-white" : "bg-stone-100 text-stone-600"
             }`}
           >
             Lote {lote.codigo}
@@ -138,6 +140,13 @@ export default function ListadoAnimalesPage() {
                   {animal.lote_codigo && <Badge tone="brand">Lote {animal.lote_codigo}</Badge>}
                 </div>
                 <p className="text-xs text-stone-400">{animal.raza ?? "Raza sin registrar"}</p>
+                {animal.alertas_activas > 0 && (
+                  <Badge tone="danger" className="mt-1">
+                    {animal.alertas_activas === 1
+                      ? "1 alerta activa"
+                      : `${animal.alertas_activas} alertas activas`}
+                  </Badge>
+                )}
                 <div className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-stone-700">
                   <Scale className="h-3.5 w-3.5 text-stone-400" />
                   {animal.ultimo_peso_kg != null ? `${animal.ultimo_peso_kg} kg` : "Sin pesajes"}

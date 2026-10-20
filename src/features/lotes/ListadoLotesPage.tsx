@@ -1,33 +1,35 @@
 import { LayoutGrid, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
+import { mensajeDeError } from "../../api/client";
 import { crearLote, listarLotes } from "../../api/lotes";
+import type { Lote } from "../../api/tipos";
 
 export default function ListadoLotesPage() {
-  const [lotes, setLotes] = useState([]);
+  const [lotes, setLotes] = useState<Lote[]>([]);
   const [codigoNuevo, setCodigoNuevo] = useState("");
   const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   function recargar() {
     setCargando(true);
     listarLotes()
       .then(setLotes)
-      .catch((err) => setError(err.message))
+      .catch((err: unknown) => setError(mensajeDeError(err)))
       .finally(() => setCargando(false));
   }
 
   useEffect(recargar, []);
 
-  async function agregarLote(event) {
+  async function agregarLote(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!codigoNuevo.trim()) return;
     setError(null);
     try {
-      await crearLote(codigoNuevo.trim());
+      await crearLote({ codigo: codigoNuevo.trim() });
       setCodigoNuevo("");
       recargar();
     } catch (err) {
-      setError(err.message);
+      setError(mensajeDeError(err));
     }
   }
 
@@ -68,7 +70,16 @@ export default function ListadoLotesPage() {
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-50 text-green-800">
               <LayoutGrid className="h-5 w-5" />
             </span>
-            <p className="font-bold text-stone-900">Lote {lote.codigo}</p>
+            <div className="min-w-0">
+              <p className="font-bold text-stone-900">
+                Lote {lote.codigo}
+                {lote.nombre && <span className="font-normal text-stone-500"> · {lote.nombre}</span>}
+              </p>
+              <p className="text-xs text-stone-400">
+                {lote.cantidad_animales === 1 ? "1 animal" : `${lote.cantidad_animales} animales`}
+                {lote.gmd_objetivo != null && ` · GMD objetivo ${lote.gmd_objetivo} kg/día`}
+              </p>
+            </div>
           </li>
         ))}
       </ul>
