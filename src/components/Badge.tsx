@@ -1,12 +1,14 @@
 import type { ReactNode } from "react";
 
-export type BadgeTone = "brand" | "neutral" | "danger" | "warning";
+export type BadgeTone = "brand" | "neutral" | "danger" | "warning" | "info" | "earth";
 
 const toneStyles: Record<BadgeTone, string> = {
-  brand: "bg-lime-300 text-green-900",
-  neutral: "bg-stone-100 text-stone-600",
-  danger: "bg-red-100 text-red-700",
-  warning: "bg-amber-100 text-amber-800",
+  brand: "bg-green-100 text-green-600",
+  neutral: "bg-neutral-100 text-neutral-600",
+  danger: "bg-danger-bg text-danger-text",
+  warning: "bg-warning-bg text-warning-text",
+  info: "bg-info-bg text-info-text",
+  earth: "bg-brown-100 text-brown-600",
 };
 
 interface BadgeProps {
@@ -18,7 +20,7 @@ interface BadgeProps {
 export default function Badge({ children, tone = "neutral", className = "" }: BadgeProps) {
   return (
     <span
-      className={`inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${toneStyles[tone]} ${className}`}
+      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-3 py-0.5 text-xs font-medium ${toneStyles[tone]} ${className}`}
     >
       {children}
     </span>
