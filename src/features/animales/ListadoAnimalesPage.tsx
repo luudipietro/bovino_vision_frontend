@@ -25,11 +25,16 @@ export default function ListadoAnimalesPage() {
   }, []);
 
   useEffect(() => {
+    // A newer search or filter makes this response stale.
+    let vigente = true;
     setCargando(true);
     listarAnimales({ q: busqueda, idLote })
-      .then(setAnimales)
-      .catch((err: unknown) => setError(mensajeDeError(err)))
-      .finally(() => setCargando(false));
+      .then((encontrados) => vigente && setAnimales(encontrados))
+      .catch((err: unknown) => vigente && setError(mensajeDeError(err)))
+      .finally(() => vigente && setCargando(false));
+    return () => {
+      vigente = false;
+    };
   }, [busqueda, idLote]);
 
   async function altaRapida(event: FormEvent<HTMLFormElement>) {

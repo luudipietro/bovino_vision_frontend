@@ -1,5 +1,5 @@
 import { PlusCircle, Search } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { crearAnimal, listarAnimales } from "../../../api/animales";
 import { mensajeDeError } from "../../../api/client";
 import type { Animal } from "../../../api/tipos";
@@ -14,20 +14,25 @@ export default function IdentificarAnimal({
   const [resultados, setResultados] = useState<Animal[]>([]);
   const [buscando, setBuscando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Responses can arrive out of order while typing; only the latest search is shown.
+  const ultimaBusqueda = useRef(0);
 
   async function buscar(texto: string) {
+    const busquedaActual = ++ultimaBusqueda.current;
     setBusqueda(texto);
     if (!texto.trim()) {
       setResultados([]);
+      setBuscando(false);
       return;
     }
     setBuscando(true);
     try {
-      setResultados(await listarAnimales({ q: texto }));
+      const encontrados = await listarAnimales({ q: texto });
+      if (busquedaActual === ultimaBusqueda.current) setResultados(encontrados);
     } catch (err) {
-      setError(mensajeDeError(err));
+      if (busquedaActual === ultimaBusqueda.current) setError(mensajeDeError(err));
     } finally {
-      setBuscando(false);
+      if (busquedaActual === ultimaBusqueda.current) setBuscando(false);
     }
   }
 
