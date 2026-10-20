@@ -1,15 +1,21 @@
 import { PlusCircle, Search } from "lucide-react";
 import { useState } from "react";
 import { crearAnimal, listarAnimales } from "../../../api/animales";
+import { mensajeDeError } from "../../../api/client";
+import type { Animal } from "../../../api/tipos";
 import Badge from "../../../components/Badge";
 
-export default function IdentificarAnimal({ onSeleccionar }) {
+export default function IdentificarAnimal({
+  onSeleccionar,
+}: {
+  onSeleccionar: (animal: Animal) => void;
+}) {
   const [busqueda, setBusqueda] = useState("");
-  const [resultados, setResultados] = useState([]);
+  const [resultados, setResultados] = useState<Animal[]>([]);
   const [buscando, setBuscando] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
-  async function buscar(texto) {
+  async function buscar(texto: string) {
     setBusqueda(texto);
     if (!texto.trim()) {
       setResultados([]);
@@ -19,7 +25,7 @@ export default function IdentificarAnimal({ onSeleccionar }) {
     try {
       setResultados(await listarAnimales({ q: texto }));
     } catch (err) {
-      setError(err.message);
+      setError(mensajeDeError(err));
     } finally {
       setBuscando(false);
     }
@@ -31,7 +37,7 @@ export default function IdentificarAnimal({ onSeleccionar }) {
       const nuevoAnimal = await crearAnimal({ identificador: busqueda.trim() });
       onSeleccionar(nuevoAnimal);
     } catch (err) {
-      setError(err.message);
+      setError(mensajeDeError(err));
     }
   }
 

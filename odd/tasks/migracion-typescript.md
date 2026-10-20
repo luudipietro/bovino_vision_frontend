@@ -17,7 +17,7 @@ Verificación: no hay runner de tests en el repo (agregarlo requiere aprobación
 | --- | --- | --- | --- | --- |
 | T1 | S1 | inline | hecha | Tooling TS 7.0.2 (tsconfig estricto con `allowJs` transitorio, scripts `typecheck`/`build`, tipos de Vite, plugin `typescript` de oxlint), shell, componentes compartidos y cliente HTTP con ProblemDetails. typecheck 0 (rechaza un error de prueba), lint con los 2 warnings ya aceptados, build OK. Commit en L5. |
 | T2 | S1, S2, S5 | inline | hecha | `src/api/tipos.ts` con todo el contrato; `animales`, `lotes`, `razas` tipados (filtros `id_lote`, `q`, `con_alertas_activas`); rodeo y lotes en TSX, mostrando también `alertas_activas`, `nombre`, `cantidad_animales` y `gmd_objetivo`. typecheck 0, lint (2 warnings aceptados), build OK. Commit en L6. |
-| T3 | S1, S2, S3 | inline | pendiente | Flujo de captura con pesaje asíncrono, polling y confirmación. |
+| T3 | S1, S2, S3 | inline | hecha | `api/capturas.ts`, `api/pesajes.ts`, `useCaptura.ts` con paso `procesando`, polling cada 1 s cancelable, lectura del evento y confirmación CU-15; 422 de imagen se muestra con reintento; pantalla `EstimandoPeso`; textos de alerta compartidos en `features/alertas/textos.ts`. typecheck 0, lint (2 warnings aceptados), build OK. Recorrido real pendiente para T5. Commit en L7. |
 | T4 | S1, S4 | inline | pendiente | Panel, alertas, ficha (historial y alertas). Sin `allowJs`. |
 | T5 | S1-S5 | inline + verificador | pendiente | Docs y recorrido real en navegador; verificación independiente (riesgo 5 por la dependencia nueva). |
 
@@ -31,3 +31,4 @@ Ruta inline en todas: las unidades comparten tipos y cliente, así que no son in
 - **L4 (excepción de test-first):** No hay runner de tests; agregar Vitest sería una dependencia nueva sin aprobar. Se reemplaza por chequeo de tipos estricto, lint, build y recorrido funcional en el navegador.
 - **L5 (T1):** `typescript@7.0.2` (latest) agregado como devDependency; `package-lock.json` también incorpora la normalización de `peer` que npm había dejado sin commitear en `manu`. Verificación: `npm run typecheck` exit 0, `npm run lint` sin errores (2 warnings preexistentes), `npm run build` OK.
 - **L6 (T2):** Se muestran los campos nuevos de las entidades ya listadas, sin formularios ni acciones nuevas (S5). `historialDePesajes` queda en `api/animales.ts` porque la ruta es `/animales/{id}/pesajes`. La ficha sigue en JS hasta T4.
+- **L7 (T3):** El polling no tiene tope: la cola del backend reintenta sola (3 intentos, 30 s) y termina en `procesada` o `fallida`; se corta al salir de la página o al pesar otro animal. Si una consulta falla por red se muestra el error con "Volver a consultar". Una captura `fallida` pide registrar una nueva, como exige el dominio.

@@ -1,5 +1,16 @@
 import { Camera, ImagePlus, RefreshCcw, ScanLine } from "lucide-react";
-import { useRef, useState } from "react";
+import { type ChangeEvent, useRef, useState } from "react";
+import type { Animal, Captura } from "../../../api/tipos";
+
+interface CapturarFotoProps {
+  animal: Animal;
+  captura: Captura | null;
+  cargando: boolean;
+  error: string | null;
+  onSubirFoto: (archivo: File) => void;
+  onReintentar: () => void;
+  onProcesarPesaje: () => void;
+}
 
 export default function CapturarFoto({
   animal,
@@ -8,13 +19,13 @@ export default function CapturarFoto({
   error,
   onSubirFoto,
   onReintentar,
-  onConfirmarPesaje,
-}) {
-  const [previewUrl, setPreviewUrl] = useState(null);
-  const inputCamara = useRef(null);
-  const inputGaleria = useRef(null);
+  onProcesarPesaje,
+}: CapturarFotoProps) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const inputCamara = useRef<HTMLInputElement>(null);
+  const inputGaleria = useRef<HTMLInputElement>(null);
 
-  function manejarArchivo(event) {
+  function manejarArchivo(event: ChangeEvent<HTMLInputElement>) {
     const archivo = event.target.files?.[0];
     event.target.value = "";
     if (!archivo) return;
@@ -91,11 +102,11 @@ export default function CapturarFoto({
       )}
 
       {cargando && <p className="mt-4 text-sm text-stone-500">Subiendo foto…</p>}
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      {error && captura && <p className="mt-4 text-sm text-red-600">{error}</p>}
 
-      {captura && !captura.validada && (
+      {error && !captura && (
         <div className="mt-4 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
-          <p>La foto no pasó la validación: {captura.motivo_invalidez}</p>
+          <p>No se pudo registrar la foto: {error}</p>
           <button
             type="button"
             onClick={reintentar}
@@ -107,13 +118,13 @@ export default function CapturarFoto({
         </div>
       )}
 
-      {captura && captura.validada && (
+      {captura && (
         <div className="mt-4 rounded-2xl border border-lime-300 bg-lime-50 p-4 text-sm text-green-900">
-          <p className="font-semibold">Foto válida. Lista para estimar el peso.</p>
+          <p className="font-semibold">Foto cargada. Lista para estimar el peso.</p>
           <button
             type="button"
             disabled={cargando}
-            onClick={onConfirmarPesaje}
+            onClick={onProcesarPesaje}
             className="mt-2 rounded-xl bg-green-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-50"
           >
             Procesar pesaje
