@@ -1,7 +1,8 @@
 import type { BadgeTone } from "../../components/Badge";
 import type { TipoAlerta } from "../../api/tipos";
+import { formatearNumero } from "../../lib/formato";
 
-const ETIQUETAS: Record<TipoAlerta, string> = {
+export const ETIQUETAS: Record<TipoAlerta, string> = {
   perdida_peso: "Pérdida de peso",
   estancamiento: "Estancamiento",
 };
@@ -22,7 +23,7 @@ export const TONO_POR_PRIORIDAD: Record<NivelPrioridad, BadgeTone> = {
 };
 
 export function formatearGmd(gmd: number): string {
-  return `${gmd > 0 ? "+" : ""}${gmd.toFixed(2)} kg/día`;
+  return `${gmd > 0 ? "+" : ""}${formatearNumero(gmd, 2)} kg/día`;
 }
 
 /** One-line summary: type, interval GMD and, for stagnation, the lot target. */

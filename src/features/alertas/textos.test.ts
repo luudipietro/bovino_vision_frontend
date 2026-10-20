@@ -11,22 +11,22 @@ describe("nivelDePrioridad", () => {
 
 describe("formatearGmd", () => {
   it("shows the sign of positive gains and two decimals", () => {
-    expect(formatearGmd(0.8)).toBe("+0.80 kg/día");
-    expect(formatearGmd(-0.35)).toBe("-0.35 kg/día");
-    expect(formatearGmd(0)).toBe("0.00 kg/día");
+    expect(formatearGmd(0.8)).toBe("+0,80 kg/día");
+    expect(formatearGmd(-0.35)).toBe("-0,35 kg/día");
+    expect(formatearGmd(0)).toBe("0,00 kg/día");
   });
 });
 
 describe("describirAlerta", () => {
   it("describes a weight loss with the interval GMD", () => {
     expect(describirAlerta({ tipo: "perdida_peso", variacion: -0.35, gmd_esperada: null })).toBe(
-      "Pérdida de peso: GMD -0.35 kg/día",
+      "Pérdida de peso: GMD -0,35 kg/día",
     );
   });
 
   it("adds the lot target to a stagnation", () => {
     expect(describirAlerta({ tipo: "estancamiento", variacion: 0, gmd_esperada: 0.8 })).toBe(
-      "Estancamiento: GMD 0.00 kg/día (objetivo +0.80 kg/día)",
+      "Estancamiento: GMD 0,00 kg/día (objetivo +0,80 kg/día)",
     );
   });
 });
