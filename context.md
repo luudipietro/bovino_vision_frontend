@@ -6,8 +6,11 @@ el trabajo sin tener que releer todo el historial de la conversación.
 
 ## Qué es esto
 
-Interfaz web (React + Vite + Tailwind v4, JavaScript puro, sin TypeScript) del sistema
-BovinoVision. Consume la API del repo `backend/` (URL configurable por `VITE_API_URL`).
+Interfaz web (React + Vite + Tailwind v4, TypeScript estricto) del sistema BovinoVision.
+Consume la API .NET del repo `../bovino_vision_backend` (URL configurable por
+`VITE_API_URL`). El 20/10/2026 se migró de JavaScript a TypeScript y se adaptó al contrato
+de la API .NET (rama `feat/migracion-typescript`; detalle en
+`odd/tasks/migracion-typescript.md`).
 
 ## Diseño visual
 
@@ -31,9 +34,10 @@ lugar (por ejemplo, "Alertas activas" en vez de "Estado Sanitario" en el panel).
 
 ## Estructura
 
-- `src/api/` — un archivo por recurso del backend (`animales`, `lotes`, `capturas`,
-  `pesajes`, `alertas`, `analitica`), todos sobre `src/api/client.js` (fetch + manejo de
-  errores con la clase `ApiError`, que expone el `detail` que devuelve el backend).
+- `src/api/` — un archivo por recurso del backend (`animales`, `lotes`, `razas`,
+  `capturas`, `pesajes`, `alertas`, `analitica`), todos sobre `src/api/client.ts` (fetch +
+  manejo de errores con la clase `ApiError`, que expone el `detail` de ProblemDetails). Los
+  tipos del contrato están en `src/api/tipos.ts`.
 - `src/features/<nombre>/` — páginas y componentes propios de cada funcionalidad
   (`captura`, `animales`, `lotes`, `panel`, `alertas`).
 - `src/components/` — compartidos entre features: `Layout`, `BackendStatus`, `StatCard`,
@@ -52,8 +56,17 @@ lugar (por ejemplo, "Alertas activas" en vez de "Estado Sanitario" en el panel).
   `<input type="file" capture="environment">` nativo del navegador/celular, no hay acceso
   de bajo nivel a la cámara.
 - **2 warnings de lint aceptados** (`react(set-state-in-effect)` en
-  `ListadoAnimalesPage.jsx` y `ListadoLotesPage.jsx`): es el patrón estándar de "mostrar
+  `ListadoAnimalesPage.tsx` y `ListadoLotesPage.tsx`): es el patrón estándar de "mostrar
   cargando y disparar el fetch al entrar o cambiar de filtro", no un bug.
+
+## Pesaje asíncrono
+
+`useCaptura` registra la foto, pide el pesaje (202) y consulta el estado de la captura cada
+segundo hasta `procesada` o `fallida`. La consulta no tiene tope porque la cola del backend
+reintenta sola y siempre termina en uno de esos estados; se corta al salir de la página o al
+pesar otro animal. Una captura `fallida` no se reintenta: se registra una nueva. En
+desarrollo, `StrictMode` monta la página dos veces y abre dos sesiones de captura (ya pasaba
+antes de la migración).
 
 ## Próximos pasos razonables (ninguno arrancado todavía)
 

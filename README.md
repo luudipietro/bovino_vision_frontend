@@ -1,11 +1,12 @@
 # BovinoVision — Frontend
 
-Interfaz web de BovinoVision, construida con **React + Vite + Tailwind CSS** (JavaScript,
-sin TypeScript).
+Interfaz web de BovinoVision, construida con **React + Vite + Tailwind CSS** en
+**TypeScript estricto**. Consume la API .NET del repo `../bovino_vision_backend`.
 
 ## Estructura
 
-- `src/api/` — cliente HTTP y funciones por recurso para hablar con el backend.
+- `src/api/` — cliente HTTP (`client.ts`, con los errores ProblemDetails de la API), funciones
+  por recurso y los tipos del contrato en `tipos.ts`.
 - `src/features/` — una carpeta por funcionalidad (`captura`, `animales`, `lotes`, …), cada
   una con sus páginas y componentes propios.
 - `src/components/` — componentes de UI compartidos entre features.
@@ -24,8 +25,24 @@ npm run dev
 Por defecto espera el backend en `http://localhost:8000` (ver `.env.example` →
 `VITE_API_URL`).
 
-## Build de producción
+## Verificación
 
 ```bash
-npm run build
+npm run typecheck   # tsc --noEmit, modo estricto
+npm run lint        # oxlint
+npm run build       # chequea tipos y genera dist/
 ```
+
+No hay tests automatizados todavía: los cambios se validan con esos tres comandos y un
+recorrido en el navegador contra la API local.
+
+## Contrato con el backend
+
+- Los ids son UUID (`string`) y los campos van en snake_case en español (`id_lote`,
+  `id_raza`, `id_animal`). La raza sale del catálogo `GET /razas`.
+- El pesaje es asíncrono: `POST /capturas` registra la foto (422 si la imagen no es
+  válida), `POST /pesajes` responde 202 y la pantalla consulta `GET /capturas/{id}` cada
+  segundo hasta `procesada` o `fallida`. Confirmar el resultado llama a
+  `POST /capturas/{id}/confirmar`.
+- Las alertas son `perdida_peso` o `estancamiento`, con la GMD del intervalo en `variacion`
+  (kg/día) y prioridad numérica (1 es la más urgente).
