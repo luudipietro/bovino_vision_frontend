@@ -3,6 +3,15 @@ import { type FormEvent, useEffect, useState } from "react";
 import { mensajeDeError } from "../../api/client";
 import { crearLote, listarLotes } from "../../api/lotes";
 import type { Lote } from "../../api/tipos";
+import Button from "../../components/Button";
+import Card from "../../components/Card";
+import { EmptyState, Loading, Notice } from "../../components/Feedback";
+import Field, { Input } from "../../components/Field";
+import PageHeader from "../../components/PageHeader";
+import { Cell, TableHeader, TableRow } from "../../components/Table";
+import { formatearNumero, formatearPorcentaje } from "../../lib/formato";
+
+const COLUMNAS = "md:grid-cols-[1fr_1.2fr_0.8fr_1.6fr_1fr]";
 
 export default function ListadoLotesPage() {
   const [lotes, setLotes] = useState<Lote[]>([]);
@@ -33,56 +42,85 @@ export default function ListadoLotesPage() {
     }
   }
 
+  const totalAnimales = lotes.reduce((suma, lote) => suma + lote.cantidad_animales, 0);
+
   return (
-    <section>
-      <h1 className="text-xl font-bold text-stone-900">Lotes</h1>
+    <section className="space-y-6">
+      <PageHeader
+        title="Lotes"
+        subtitle={`${formatearNumero(lotes.length)} ${lotes.length === 1 ? "lote" : "lotes"}`}
+      />
 
-      <form onSubmit={agregarLote} className="mt-4 flex max-w-sm gap-2">
-        <input
-          type="text"
-          value={codigoNuevo}
-          onChange={(e) => setCodigoNuevo(e.target.value)}
-          placeholder="Código de lote"
-          className="flex-1 rounded-xl border border-stone-300 px-3 py-2 text-sm focus:border-green-700 focus:outline-none"
-        />
-        <button
-          type="submit"
-          className="flex items-center gap-1.5 rounded-xl bg-green-900 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
-        >
-          <Plus className="h-4 w-4" />
-          Crear
-        </button>
-      </form>
+      <Card className="md:p-6">
+        <form onSubmit={agregarLote} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <Field label="Código de lote" className="sm:max-w-sm sm:flex-1">
+            <Input
+              type="text"
+              value={codigoNuevo}
+              onChange={(e) => setCodigoNuevo(e.target.value)}
+              placeholder="Por ejemplo, A1"
+            />
+          </Field>
+          <Button type="submit" icon={Plus}>
+            Crear lote
+          </Button>
+        </form>
+      </Card>
 
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-      {cargando && <p className="mt-4 text-sm text-stone-400">Cargando…</p>}
+      {error && <Notice tone="danger">{error}</Notice>}
+      {cargando && <Loading />}
 
       {!cargando && lotes.length === 0 && (
-        <p className="mt-4 text-sm text-stone-400">No hay lotes creados todavía.</p>
+        <EmptyState icon={LayoutGrid} title="No hay lotes creados todavía">
+          Creá el primero con su código para empezar a agrupar el rodeo.
+        </EmptyState>
       )}
 
-      <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {lotes.map((lote) => (
-          <li
-            key={lote.id}
-            className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm"
-          >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-50 text-green-800">
-              <LayoutGrid className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <p className="font-bold text-stone-900">
-                Lote {lote.codigo}
-                {lote.nombre && <span className="font-normal text-stone-500"> · {lote.nombre}</span>}
-              </p>
-              <p className="text-xs text-stone-400">
-                {lote.cantidad_animales === 1 ? "1 animal" : `${lote.cantidad_animales} animales`}
-                {lote.gmd_objetivo != null && ` · GMD objetivo ${lote.gmd_objetivo} kg/día`}
-              </p>
-            </div>
-          </li>
-        ))}
-      </ul>
+      {lotes.length > 0 && (
+        <div className="space-y-2">
+          <TableHeader
+            columns={COLUMNAS}
+            labels={["Lote", "Nombre", "Animales", "Participación", "GMD objetivo"]}
+          />
+          {lotes.map((lote) => {
+            const participacion = totalAnimales > 0 ? lote.cantidad_animales / totalAnimales : 0;
+            const porcentaje = Math.round(participacion * 100);
+            return (
+              <TableRow key={lote.id} columns={COLUMNAS}>
+                <span className="text-sm font-bold text-neutral-800">Lote {lote.codigo}</span>
+                <Cell label="Nombre" muted>
+                  {lote.nombre ?? "Sin nombre"}
+                </Cell>
+                <Cell label="Animales">
+                  <span className="font-semibold tabular-nums">
+                    {formatearNumero(lote.cantidad_animales)}
+                  </span>
+                </Cell>
+                <div className="flex items-center gap-3">
+                  <div
+                    role="progressbar"
+                    aria-label={`Participación del lote ${lote.codigo}`}
+                    aria-valuenow={porcentaje}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    className="h-2 flex-1 overflow-hidden rounded-full bg-neutral-100"
+                  >
+                    <div className="h-full rounded-full bg-green-500" style={{ width: `${porcentaje}%` }} />
+                  </div>
+                  <span className="w-12 text-right text-xs font-semibold tabular-nums text-neutral-800">
+                    {formatearPorcentaje(participacion)}
+                  </span>
+                </div>
+                <Cell label="GMD objetivo" muted>
+                  {lote.gmd_objetivo != null
+                    ? `${formatearNumero(lote.gmd_objetivo, 2)} kg/día`
+                    : "Sin objetivo"}
+                </Cell>
+              </TableRow>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }

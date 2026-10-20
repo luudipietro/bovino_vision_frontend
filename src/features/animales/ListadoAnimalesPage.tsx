@@ -1,4 +1,4 @@
-import { PawPrint, Plus, Scale, Search } from "lucide-react";
+import { Eye, PawPrint, Plus, X } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { crearAnimal, listarAnimales } from "../../api/animales";
@@ -6,7 +6,15 @@ import { mensajeDeError } from "../../api/client";
 import { listarLotes } from "../../api/lotes";
 import type { Animal, Lote, Uuid } from "../../api/tipos";
 import Badge from "../../components/Badge";
-import StatCard from "../../components/StatCard";
+import Button from "../../components/Button";
+import Card from "../../components/Card";
+import { EmptyState, Loading, Notice } from "../../components/Feedback";
+import Field, { Input, SearchInput, Select } from "../../components/Field";
+import PageHeader from "../../components/PageHeader";
+import { Cell, TableHeader, TableRow } from "../../components/Table";
+import { formatearKg, formatearNumero } from "../../lib/formato";
+
+const COLUMNAS = "md:grid-cols-[1.4fr_1fr_0.8fr_0.9fr_1.2fr_auto]";
 
 export default function ListadoAnimalesPage() {
   const [busqueda, setBusqueda] = useState("");
@@ -51,116 +59,115 @@ export default function ListadoAnimalesPage() {
     }
   }
 
+  const cabezas = animales.length;
+
   return (
-    <section>
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-stone-900">Rodeo</h1>
-        <button
-          type="button"
-          onClick={() => setMostrarAlta((valor) => !valor)}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-green-900 text-white shadow-sm hover:bg-green-800"
-          aria-label="Dar de alta un animal"
-        >
-          <Plus className="h-5 w-5" />
-        </button>
-      </div>
+    <section className="space-y-6">
+      <PageHeader
+        title="Rodeo"
+        subtitle={`${formatearNumero(cabezas)} ${cabezas === 1 ? "cabeza" : "cabezas"}`}
+      />
 
-      {mostrarAlta && (
-        <form onSubmit={altaRapida} className="mt-3 flex gap-2">
-          <input
-            type="text"
-            autoFocus
-            value={nuevoIdentificador}
-            onChange={(e) => setNuevoIdentificador(e.target.value)}
-            placeholder="Identificador del nuevo animal"
-            className="flex-1 rounded-xl border border-stone-300 px-3 py-2 text-sm focus:border-green-700 focus:outline-none"
-          />
-          <button
-            type="submit"
-            className="rounded-xl bg-green-900 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
-          >
-            Agregar
-          </button>
-        </form>
-      )}
-
-      <div className="mt-4">
-        <StatCard icon={PawPrint} label="Total cabezas" value={animales.length} />
-      </div>
-
-      <div className="relative mt-4">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-        <input
-          type="text"
+      <div className="flex flex-col gap-3 md:flex-row md:items-center">
+        <SearchInput
+          aria-label="Buscar por identificador"
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
           placeholder="Buscar por identificador…"
-          className="w-full rounded-xl border border-stone-300 bg-white py-2.5 pl-9 pr-3 text-sm focus:border-green-700 focus:outline-none"
+          className="md:max-w-sm md:flex-1"
         />
-      </div>
-
-      <div className="mt-3 flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => setIdLote(null)}
-          className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-            idLote === null ? "bg-green-900 text-white" : "bg-stone-100 text-stone-600"
-          }`}
+        <Select
+          aria-label="Filtrar por lote"
+          value={idLote ?? ""}
+          onChange={(e) => setIdLote(e.target.value || null)}
+          className="md:w-56"
         >
-          Todos
-        </button>
-        {lotes.map((lote) => (
-          <button
-            key={lote.id}
-            type="button"
-            onClick={() => setIdLote(lote.id)}
-            className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-              idLote === lote.id ? "bg-green-900 text-white" : "bg-stone-100 text-stone-600"
-            }`}
-          >
-            Lote {lote.codigo}
-          </button>
-        ))}
+          <option value="">Todos los lotes</option>
+          {lotes.map((lote) => (
+            <option key={lote.id} value={lote.id}>
+              Lote {lote.codigo}
+            </option>
+          ))}
+        </Select>
+        <Button
+          icon={mostrarAlta ? X : Plus}
+          onClick={() => setMostrarAlta((valor) => !valor)}
+          aria-expanded={mostrarAlta}
+          className="md:ml-auto"
+        >
+          {mostrarAlta ? "Cerrar" : "Nuevo animal"}
+        </Button>
       </div>
 
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
-      {cargando && <p className="mt-4 text-sm text-stone-400">Cargando…</p>}
-      {!cargando && animales.length === 0 && (
-        <p className="mt-4 text-sm text-stone-400">No hay animales registrados todavía.</p>
+      {mostrarAlta && (
+        <Card className="md:p-6">
+          <form onSubmit={altaRapida} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <Field label="Identificador del nuevo animal" className="sm:max-w-sm sm:flex-1">
+              <Input
+                type="text"
+                autoFocus
+                value={nuevoIdentificador}
+                onChange={(e) => setNuevoIdentificador(e.target.value)}
+                placeholder="Caravana o identificador"
+              />
+            </Field>
+            <Button type="submit">Agregar</Button>
+          </form>
+        </Card>
       )}
 
-      <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {animales.map((animal) => (
-          <li key={animal.id}>
-            <Link
-              to={`/animales/${animal.id}`}
-              className="flex items-start gap-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
-            >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-green-50 text-green-800">
-                <PawPrint className="h-5 w-5" />
+      {error && <Notice tone="danger">{error}</Notice>}
+      {cargando && <Loading />}
+      {!cargando && animales.length === 0 && (
+        <EmptyState icon={PawPrint} title="No hay animales para mostrar">
+          Probá con otra búsqueda o dá de alta un animal nuevo.
+        </EmptyState>
+      )}
+
+      {animales.length > 0 && (
+        <div className="space-y-2">
+          <TableHeader
+            columns={COLUMNAS}
+            labels={["Identificador", "Raza", "Lote", "Último peso", "Estado", "Acciones"]}
+          />
+          {animales.map((animal) => (
+            <TableRow key={animal.id} columns={COLUMNAS}>
+              <span className="min-w-0 truncate text-sm font-bold text-neutral-800">
+                {animal.identificador}
               </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="truncate font-bold text-stone-900">{animal.identificador}</p>
-                  {animal.lote_codigo && <Badge tone="brand">Lote {animal.lote_codigo}</Badge>}
-                </div>
-                <p className="text-xs text-stone-400">{animal.raza ?? "Raza sin registrar"}</p>
-                {animal.alertas_activas > 0 && (
-                  <Badge tone="danger" className="mt-1">
+              <Cell label="Raza">
+                <span className="text-brown-600">{animal.raza ?? "Sin registrar"}</span>
+              </Cell>
+              <Cell label="Lote" muted>
+                {animal.lote_codigo ? `Lote ${animal.lote_codigo}` : "Sin lote"}
+              </Cell>
+              <Cell label="Último peso">
+                <span className="font-semibold tabular-nums">
+                  {animal.ultimo_peso_kg != null ? formatearKg(animal.ultimo_peso_kg, 1) : "Sin pesajes"}
+                </span>
+              </Cell>
+              <span>
+                {animal.alertas_activas > 0 ? (
+                  <Badge tone="danger">
                     {animal.alertas_activas === 1
                       ? "1 alerta activa"
-                      : `${animal.alertas_activas} alertas activas`}
+                      : `${formatearNumero(animal.alertas_activas)} alertas activas`}
                   </Badge>
+                ) : (
+                  <Badge tone="brand">Sin alertas</Badge>
                 )}
-                <div className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-stone-700">
-                  <Scale className="h-3.5 w-3.5 text-stone-400" />
-                  {animal.ultimo_peso_kg != null ? `${animal.ultimo_peso_kg} kg` : "Sin pesajes"}
-                </div>
-              </div>
-            </Link>
-          </li>
-        ))}
-      </ul>
+              </span>
+              <Link
+                to={`/animales/${animal.id}`}
+                className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-neutral-600 hover:text-green-800"
+              >
+                <Eye className="h-[18px] w-[18px]" />
+                Ver ficha
+              </Link>
+            </TableRow>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

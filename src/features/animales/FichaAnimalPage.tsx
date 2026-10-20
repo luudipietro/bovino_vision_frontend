@@ -1,13 +1,18 @@
-import { ArrowDown, ArrowUp, Calendar, Dna, LayoutGrid, TrendingUp } from "lucide-react";
+import { ArrowLeft, Scale } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { listarAlertasDeAnimal } from "../../api/alertas";
 import { historialDePesajes, obtenerAnimal } from "../../api/animales";
 import { mensajeDeError } from "../../api/client";
 import type { Alerta, Animal, PesajeHistorial } from "../../api/tipos";
-import Badge from "../../components/Badge";
-import EvolucionChart from "../../components/EvolucionChart";
+import Card, { CardHeader } from "../../components/Card";
+import { EmptyState, Loading, Notice } from "../../components/Feedback";
+import KpiTile from "../../components/KpiTile";
+import LineChart from "../../components/LineChart";
+import PageHeader from "../../components/PageHeader";
+import { formatearFecha, formatearFechaCorta, formatearKg, formatearNumero } from "../../lib/formato";
 import { describirAlerta, formatearGmd, nivelDePrioridad } from "../alertas/textos";
+import LineaDePesajes from "./LineaDePesajes";
 
 export default function FichaAnimalPage() {
   const { id = "" } = useParams();
@@ -26,8 +31,25 @@ export default function FichaAnimalPage() {
       .catch((err: unknown) => setError(mensajeDeError(err)));
   }, [id]);
 
-  if (error) return <p className="text-sm text-red-600">{error}</p>;
-  if (!animal) return <p className="text-sm text-stone-400">Cargando…</p>;
+  const volver = (
+    <Link
+      to="/animales"
+      className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-neutral-600 hover:text-green-800"
+    >
+      <ArrowLeft className="h-[18px] w-[18px]" />
+      Rodeo
+    </Link>
+  );
+
+  if (error) {
+    return (
+      <section className="space-y-4">
+        {volver}
+        <Notice tone="danger">{error}</Notice>
+      </section>
+    );
+  }
+  if (!animal) return <Loading />;
 
   // The history only holds weighing events (failed estimations never create one), newest first.
   const ultimoPesaje = pesajes[0] ?? null;
@@ -35,112 +57,78 @@ export default function FichaAnimalPage() {
   const delta =
     ultimoPesaje && pesajeAnterior ? ultimoPesaje.peso_kg - pesajeAnterior.peso_kg : null;
 
-  const puntosEvolucion = [...pesajes]
-    .reverse()
-    .map((p) => ({ fecha: p.fecha_pesaje.slice(0, 10), peso_promedio_kg: p.peso_kg }));
+  const cronologico = [...pesajes].reverse();
+  const metadatos = [
+    animal.raza ?? "Raza sin registrar",
+    animal.sexo ? (animal.sexo === "macho" ? "Macho" : "Hembra") : null,
+    animal.lote_codigo ? `Lote ${animal.lote_codigo}` : "Sin lote asignado",
+    animal.fecha_nacimiento ? `Nació el ${formatearFecha(animal.fecha_nacimiento)}` : null,
+  ].filter((dato): dato is string => dato !== null);
 
   return (
-    <section>
-      <Link to="/animales" className="text-sm font-semibold text-green-800 hover:underline">
-        ← Volver al rodeo
-      </Link>
+    <section className="space-y-6">
+      {volver}
+      <PageHeader title={animal.identificador} subtitle={metadatos.join(" · ")} />
 
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <h1 className="text-2xl font-bold text-stone-900">{animal.identificador}</h1>
-        {animal.sexo && <Badge tone="brand">{animal.sexo}</Badge>}
-      </div>
-
-      <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-stone-500">
-        <span className="flex items-center gap-1.5">
-          <Dna className="h-4 w-4" /> {animal.raza ?? "Raza sin registrar"}
-        </span>
-        <span className="flex items-center gap-1.5">
-          <LayoutGrid className="h-4 w-4" />
-          {animal.lote_codigo ? `Lote ${animal.lote_codigo}` : "Sin lote asignado"}
-        </span>
-        {animal.fecha_nacimiento && (
-          <span className="flex items-center gap-1.5">
-            <Calendar className="h-4 w-4" /> Nació {animal.fecha_nacimiento}
-          </span>
-        )}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <KpiTile
+          label="Último pesaje"
+          value={ultimoPesaje ? formatearKg(ultimoPesaje.peso_kg, 1) : "—"}
+        />
+        <KpiTile
+          label="Variación vs. anterior"
+          value={
+            delta != null ? `${delta > 0 ? "+" : ""}${formatearKg(delta, 1)}` : "—"
+          }
+          tone={delta != null && delta < 0 ? "danger" : "default"}
+        />
+        <KpiTile
+          label="GMD del último intervalo"
+          value={ultimoPesaje?.gmd_kg_dia != null ? formatearGmd(ultimoPesaje.gmd_kg_dia) : "—"}
+          tone={ultimoPesaje?.gmd_kg_dia != null && ultimoPesaje.gmd_kg_dia < 0 ? "danger" : "default"}
+        />
+        <KpiTile label="Pesajes" value={formatearNumero(pesajes.length)} />
       </div>
 
       {alertas.length > 0 && (
-        <div className="mt-4 space-y-2">
-          {alertas.map((alerta) => (
-            <div
-              key={alerta.id}
-              className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800"
-            >
-              {describirAlerta(alerta)} · prioridad {nivelDePrioridad(alerta.prioridad)} ·{" "}
-              {new Date(alerta.fecha_generacion).toLocaleDateString()}
-            </div>
-          ))}
+        <div className="space-y-2">
+          {alertas.map((alerta) => {
+            const nivel = nivelDePrioridad(alerta.prioridad);
+            return (
+              <Notice key={alerta.id} tone={nivel === "alta" ? "danger" : "warning"}>
+                {describirAlerta(alerta)} · prioridad {nivel} ·{" "}
+                {formatearFecha(alerta.fecha_generacion)}
+              </Notice>
+            );
+          })}
         </div>
       )}
 
-      <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,260px)_1fr]">
-        <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-stone-400">
-            Último pesaje
-          </p>
-          <div className="mt-2 flex items-baseline gap-2">
-            <p className="text-4xl font-bold text-green-900">
-              {ultimoPesaje ? ultimoPesaje.peso_kg : "—"}
-            </p>
-            {ultimoPesaje && <span className="text-lg text-stone-400">kg</span>}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader title="Curva de crecimiento" subtitle="Peso estimado en cada pesaje" />
+          <div className="mt-4">
+            <LineChart
+              labels={cronologico.map((p) => formatearFechaCorta(p.fecha_pesaje))}
+              series={[{ name: "Peso", values: cronologico.map((p) => p.peso_kg) }]}
+              formatValue={(valor) => formatearKg(valor, 1)}
+              formatAxis={(valor) => formatearKg(valor)}
+              ariaLabel="Curva de crecimiento del animal"
+            />
           </div>
-          {delta != null && (
-            <Badge tone={delta >= 0 ? "brand" : "danger"} className="mt-2 gap-1">
-              {delta >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-              {delta >= 0 ? "+" : ""}
-              {delta.toFixed(1)} kg
-            </Badge>
-          )}
-          {ultimoPesaje && (
-            <p className="mt-3 text-xs text-stone-400">
-              {new Date(ultimoPesaje.fecha_pesaje).toLocaleString()}
-            </p>
-          )}
-        </div>
+        </Card>
 
-        <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-          <p className="flex items-center gap-1.5 text-sm font-semibold text-stone-700">
-            <TrendingUp className="h-4 w-4" /> Curva de crecimiento
-          </p>
-          <div className="mt-3">
-            <EvolucionChart puntos={puntosEvolucion} />
+        <Card>
+          <CardHeader title="Registro cronológico de pesajes" subtitle="Del más reciente al más antiguo" />
+          <div className="mt-5">
+            {pesajes.length === 0 ? (
+              <EmptyState icon={Scale} title="Todavía no tiene pesajes registrados" />
+            ) : (
+              <LineaDePesajes pesajes={pesajes} />
+            )}
           </div>
-        </div>
+        </Card>
       </div>
-
-      <h2 className="mt-6 text-sm font-semibold text-stone-700">
-        Registro cronológico de pesajes
-      </h2>
-
-      {pesajes.length === 0 ? (
-        <p className="mt-2 text-sm text-stone-400">Todavía no tiene pesajes registrados.</p>
-      ) : (
-        <ul className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {pesajes.map((pesaje) => (
-            <li
-              key={pesaje.id}
-              className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm"
-            >
-              <p className="text-lg font-bold text-stone-900">{pesaje.peso_kg} kg</p>
-              {pesaje.gmd_kg_dia != null && (
-                <Badge tone={pesaje.gmd_kg_dia >= 0 ? "brand" : "danger"} className="mt-1">
-                  GMD {formatearGmd(pesaje.gmd_kg_dia)}
-                </Badge>
-              )}
-              <p className="mt-2 text-xs text-stone-400">
-                {new Date(pesaje.fecha_pesaje).toLocaleString()}
-                {pesaje.lote_codigo && ` · Lote ${pesaje.lote_codigo}`}
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
     </section>
   );
 }
