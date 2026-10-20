@@ -1,0 +1,32 @@
+# Feature: migracion-typescript
+
+Objetivo: migrar el frontend React + Vite + Tailwind de JavaScript a TypeScript estricto y adaptarlo al contrato de la API .NET (`../bovino_vision_backend`, rama `feat/migracion-dotnet`). Rama `feat/migracion-typescript`, creada desde `manu`; un commit por unidad de trabajo, sin push, PR ni merge. El slicing de PR lo decide el usuario.
+Verificación: no hay runner de tests en el repo (agregarlo requiere aprobación). Cada tarea se valida con `npm run typecheck`, `npm run lint` y `npm run build`, y el cierre con un recorrido real en el navegador contra la API local (Postgres de Docker, nunca Neon).
+
+## Specs
+
+- **S1. Migración a TypeScript.** Usuario: "migralo a TypeScript y adaptalo al contrato nuevo." Todo `src/` pasa a `.ts`/`.tsx` con `strict`; el build falla ante errores de tipos. Única dependencia nueva: `typescript` (implícita en el pedido).
+- **S2. Contrato nuevo.** Los tipos del cliente reflejan el JSON real de la API .NET, relevado de `/openapi/v1.json` y de un recorrido completo contra la API local: UUID como `string`, campos en español snake_case (`id_lote`, `id_raza`, `id_sesion`, `id_animal`, `id_captura`), raza por catálogo (`/razas`), sexo `macho`/`hembra`, lotes con `nombre`, `gmd_objetivo` y `cantidad_animales`, filtros `id_lote`/`q`/`con_alertas_activas`.
+- **S3. Pesaje asíncrono.** `POST /capturas` (multipart `id_sesion`, `id_animal`, `imagen`) devuelve 201 o 422 si la imagen es inválida; `POST /pesajes` con `{ "id_captura" }` devuelve 202 sin cuerpo; el cliente consulta `GET /capturas/{id}` hasta `procesada` o `fallida` y, si procesó, lee `GET /pesajes/{id_evento_pesaje}`. Una falla muestra `motivo_fallo`. Confirmar el resultado usa `POST /capturas/{id}/confirmar` (CU-15).
+- **S4. Analítica y alertas.** Historial con `gmd_kg_dia`; alertas con `tipo` (`perdida_peso`, `estancamiento`), `prioridad` numérica (1 = más urgente), `variacion` (GMD del intervalo, kg/día) y `gmd_esperada`; panel y reporte con sus campos actuales. Los errores muestran el `detail` de ProblemDetails.
+- **S5. Sin cambios de alcance.** Se conservan pantallas, rutas, estética y simplificaciones documentadas en `context.md`; no se agregan funcionalidades más allá de lo que exige el contrato. Documentación (README, `context.md`) en español.
+
+## Tasks
+
+| ID | Specs | Ruta | Estado | Evidencia / commit |
+| --- | --- | --- | --- | --- |
+| T1 | S1 | inline | hecha | Tooling TS 7.0.2 (tsconfig estricto con `allowJs` transitorio, scripts `typecheck`/`build`, tipos de Vite, plugin `typescript` de oxlint), shell, componentes compartidos y cliente HTTP con ProblemDetails. typecheck 0 (rechaza un error de prueba), lint con los 2 warnings ya aceptados, build OK. Commit en L5. |
+| T2 | S1, S2, S5 | inline | pendiente | Tipos del contrato y API de trazabilidad; rodeo, ficha básica y lotes. |
+| T3 | S1, S2, S3 | inline | pendiente | Flujo de captura con pesaje asíncrono, polling y confirmación. |
+| T4 | S1, S4 | inline | pendiente | Panel, alertas, ficha (historial y alertas). Sin `allowJs`. |
+| T5 | S1-S5 | inline + verificador | pendiente | Docs y recorrido real en navegador; verificación independiente (riesgo 5 por la dependencia nueva). |
+
+Ruta inline en todas: las unidades comparten tipos y cliente, así que no son independientes (sin disparador de escritor).
+
+## Log
+
+- **L1 (usuario, 2026-10-20):** "migralo a TypeScript y adaptalo al contrato nuevo. hacelo en una nueva rama de feat que salga de manu"
+- **L2 (contexto):** El frontend usaba el contrato Python (ids enteros, `lote_id`, `captura_id`, `validada`/`motivo_invalidez` en la captura, pesaje síncrono con `estado` `estimado`/error, alertas con `variacion_pct` y prioridad textual). El backend .NET cambió esos contratos de forma deliberada (S7 del backend).
+- **L3 (decisión):** Estimación de ~1.500 líneas, por encima de la heurística de 400. Estrategia de entrega: rama de feature con commits por unidad; el usuario decide cómo dividir PRs. Espejo Engram guardado en el proyecto `bovino_vision_backend` (Engram resuelve el proyecto desde el directorio de la sesión), tópico `odd/migracion-typescript/tasks`.
+- **L4 (excepción de test-first):** No hay runner de tests; agregar Vitest sería una dependencia nueva sin aprobar. Se reemplaza por chequeo de tipos estricto, lint, build y recorrido funcional en el navegador.
+- **L5 (T1):** `typescript@7.0.2` (latest) agregado como devDependency; `package-lock.json` también incorpora la normalización de `peer` que npm había dejado sin commitear en `manu`. Verificación: `npm run typecheck` exit 0, `npm run lint` sin errores (2 warnings preexistentes), `npm run build` OK.

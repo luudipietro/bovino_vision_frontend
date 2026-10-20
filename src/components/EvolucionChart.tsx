@@ -1,7 +1,19 @@
-export default function EvolucionChart({ puntos }) {
-  const validos = puntos.filter((p) => p.peso_promedio_kg != null);
+export interface PuntoGrafico {
+  fecha: string;
+  peso_promedio_kg: number | null;
+}
 
-  if (validos.length < 2) {
+interface PuntoValido {
+  fecha: string;
+  peso_promedio_kg: number;
+}
+
+export default function EvolucionChart({ puntos }: { puntos: PuntoGrafico[] }) {
+  const validos = puntos.filter((p): p is PuntoValido => p.peso_promedio_kg != null);
+  const primero = validos[0];
+  const ultimo = validos[validos.length - 1];
+
+  if (!primero || !ultimo || validos.length < 2) {
     return (
       <p className="text-sm text-stone-400">
         Todavía no hay suficientes datos para graficar la evolución.
@@ -46,13 +58,13 @@ export default function EvolucionChart({ puntos }) {
         ))}
         <polyline points={puntosSvg} fill="none" stroke="#14532d" strokeWidth="2.5" />
         {coordenadas.map(({ x, y }, indice) => (
-          // eslint-disable-next-line react/no-array-index-key -- el orden es estable y la fecha puede repetirse en el mismo día
+          // oxlint-disable-next-line react/no-array-index-key -- order is stable and a date may repeat
           <circle key={indice} cx={x} cy={y} r="3" fill="#14532d" />
         ))}
       </svg>
       <div className="mt-1 flex justify-between text-[11px] text-stone-400">
-        <span>{validos[0].fecha}</span>
-        <span>{validos[validos.length - 1].fecha}</span>
+        <span>{primero.fecha}</span>
+        <span>{ultimo.fecha}</span>
       </div>
     </div>
   );

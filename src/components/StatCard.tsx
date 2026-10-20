@@ -1,10 +1,22 @@
-const toneStyles = {
+import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
+
+type StatTone = "neutral" | "danger" | "accent";
+
+const toneStyles: Record<StatTone, string> = {
   neutral: "bg-green-50 text-green-800",
   danger: "bg-red-50 text-red-600",
   accent: "bg-lime-100 text-green-800",
 };
 
-export default function StatCard({ icon: Icon, label, value, tone = "neutral" }) {
+interface StatCardProps {
+  icon?: LucideIcon;
+  label: string;
+  value: ReactNode;
+  tone?: StatTone;
+}
+
+export default function StatCard({ icon: Icon, label, value, tone = "neutral" }: StatCardProps) {
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
       {Icon && (
