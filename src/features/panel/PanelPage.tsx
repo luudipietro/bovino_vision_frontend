@@ -1,18 +1,20 @@
 import { AlertTriangle, PawPrint, Scale, TrendingUp } from "lucide-react";
-import { useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { listarAlertasDelRodeo } from "../../api/alertas";
 import { generarReporte, obtenerPanel } from "../../api/analitica";
+import { mensajeDeError } from "../../api/client";
+import type { Panel, Reporte } from "../../api/tipos";
 import EvolucionChart from "../../components/EvolucionChart";
 import StatCard from "../../components/StatCard";
 
 export default function PanelPage() {
-  const [panel, setPanel] = useState(null);
+  const [panel, setPanel] = useState<Panel | null>(null);
   const [cantidadAlertas, setCantidadAlertas] = useState(0);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
-  const [reporte, setReporte] = useState(null);
-  const [errorReporte, setErrorReporte] = useState(null);
+  const [reporte, setReporte] = useState<Reporte | null>(null);
+  const [errorReporte, setErrorReporte] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([obtenerPanel(), listarAlertasDelRodeo()])
@@ -20,16 +22,16 @@ export default function PanelPage() {
         setPanel(datosPanel);
         setCantidadAlertas(alertas.length);
       })
-      .catch((err) => setError(err.message));
+      .catch((err: unknown) => setError(mensajeDeError(err)));
   }, []);
 
-  async function consultarReporte(event) {
+  async function consultarReporte(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorReporte(null);
     try {
       setReporte(await generarReporte({ desde, hasta }));
     } catch (err) {
-      setErrorReporte(err.message);
+      setErrorReporte(mensajeDeError(err));
     }
   }
 
@@ -103,8 +105,9 @@ export default function PanelPage() {
         {errorReporte && <p className="mt-2 text-sm text-red-600">{errorReporte}</p>}
 
         {reporte && (
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard label="Pesajes en el período" value={reporte.cantidad_pesajes} />
+            <StatCard icon={PawPrint} label="Animales pesados" value={reporte.cantidad_animales} />
             <StatCard
               icon={Scale}
               label="Peso promedio"
