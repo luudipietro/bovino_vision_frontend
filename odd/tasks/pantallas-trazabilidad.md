@@ -23,7 +23,7 @@ Verificación: `npm run test` (Vitest) para la lógica sin interfaz, `npm run ty
 | --- | --- | --- | --- | --- |
 | T1 | S1, S2 | inline | hecha | `formularioAnimal.ts` (RED: módulo inexistente; GREEN 6 tests), `CamposAnimal.tsx`, `useCatalogos.ts`; alta completa en el Rodeo (arranca con el lote filtrado), edición en la ficha con `PUT` solo de lo cambiado e historial de lotes. typecheck 0, lint (2 aceptados), 26 tests. Recorrido en T5. |
 | T2 | S1, S3 | inline | hecha | `formularioLote.ts` (RED: módulo inexistente; GREEN 8 tests: coma decimal, GMD positiva, solo lo cambiado), `modificarLote`; alta con código, nombre y GMD objetivo; edición en línea por lote. typecheck 0, lint (2 aceptados), 34 tests. Recorrido en T5. |
-| T3 | S1, S4 | inline | pendiente | Filtro por lote en panel y reporte. |
+| T3 | S1, S4 | inline | hecha | Selector de lote en el encabezado del panel: recarga el panel con `id_lote` (descarta respuestas viejas), pasa `id_lote` al reporte y limpia el reporte anterior al cambiar el alcance. Las alertas no tienen filtro por lote en la API: con un lote elegido se suman las `alertas_activas` de sus animales actuales. typecheck 0, lint (2 aceptados), 34 tests. Recorrido en T5. |
 | T4 | S1, S5 | inline | pendiente | Galería de la sesión de captura. |
 | T5 | S1-S5 | inline + verificador | pendiente | Docs, recorrido en navegador y verificación independiente (riesgo 6: los componentes no tienen tests). |
 

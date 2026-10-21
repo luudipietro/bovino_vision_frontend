@@ -2,12 +2,13 @@ import { Layers } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { listarAlertasDelRodeo } from "../../api/alertas";
 import { generarReporte, obtenerPanel } from "../../api/analitica";
+import { listarAnimales } from "../../api/animales";
 import { mensajeDeError } from "../../api/client";
 import { listarLotes } from "../../api/lotes";
-import type { Lote, Panel, Reporte } from "../../api/tipos";
+import type { Lote, Panel, Reporte, Uuid } from "../../api/tipos";
 import Button from "../../components/Button";
 import Card, { CardHeader, LinkStrip } from "../../components/Card";
-import Field, { Input } from "../../components/Field";
+import Field, { Input, Select } from "../../components/Field";
 import { Loading, Notice } from "../../components/Feedback";
 import KpiTile from "../../components/KpiTile";
 import LineChart from "../../components/LineChart";
@@ -77,6 +78,16 @@ function DistribucionPorLote({ lotes, total }: { lotes: Lote[]; total: number })
   );
 }
 
+/**
+ * The alerts endpoint has no lot filter: within a lot, the count adds up the active alerts of
+ * its current animals.
+ */
+async function contarAlertasActivas(idLote: Uuid | null): Promise<number> {
+  if (!idLote) return (await listarAlertasDelRodeo()).length;
+  const animales = await listarAnimales({ idLote, conAlertasActivas: true });
+  return animales.reduce((suma, animal) => suma + animal.alertas_activas, 0);
+}
+
 export default function PanelPage() {
   const [panel, setPanel] = useState<Panel | null>(null);
   const [cantidadAlertas, setCantidadAlertas] = useState(0);
@@ -87,24 +98,41 @@ export default function PanelPage() {
   const [hasta, setHasta] = useState("");
   const [reporte, setReporte] = useState<Reporte | null>(null);
   const [errorReporte, setErrorReporte] = useState<string | null>(null);
+  const [idLote, setIdLote] = useState<Uuid | null>(null);
 
   useEffect(() => {
-    Promise.all([obtenerPanel(), listarAlertasDelRodeo()])
-      .then(([datosPanel, alertas]) => {
-        setPanel(datosPanel);
-        setCantidadAlertas(alertas.length);
-      })
-      .catch((err: unknown) => setError(mensajeDeError(err)));
     listarLotes()
       .then(setLotes)
       .catch((err: unknown) => setErrorLotes(mensajeDeError(err)));
   }, []);
 
+  useEffect(() => {
+    // A newer lot filter makes this response stale.
+    let vigente = true;
+    Promise.all([obtenerPanel({ idLote }), contarAlertasActivas(idLote)])
+      .then(([datosPanel, alertas]) => {
+        if (!vigente) return;
+        setPanel(datosPanel);
+        setCantidadAlertas(alertas);
+      })
+      .catch((err: unknown) => vigente && setError(mensajeDeError(err)));
+    return () => {
+      vigente = false;
+    };
+  }, [idLote]);
+
+  function filtrarPorLote(valor: Uuid | null) {
+    setIdLote(valor);
+    // A report from another scope would be misleading.
+    setReporte(null);
+    setErrorReporte(null);
+  }
+
   async function consultarReporte(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorReporte(null);
     try {
-      setReporte(await generarReporte({ desde, hasta }));
+      setReporte(await generarReporte({ desde, hasta, idLote }));
     } catch (err) {
       setErrorReporte(mensajeDeError(err));
     }
@@ -114,13 +142,34 @@ export default function PanelPage() {
   if (!panel) return <Loading />;
 
   const puntos = panel.evolucion_peso_promedio.filter((punto) => punto.peso_promedio_kg != null);
+  const loteElegido = lotes?.find((lote) => lote.id === idLote);
+  const alcance = loteElegido ? `del lote ${loteElegido.codigo}` : "del rodeo";
   const cobertura = panel.cantidad_animales > 0 ? panel.animales_con_gmd / panel.cantidad_animales : 0;
 
   return (
     <section className="min-w-0 space-y-6">
       <PageHeader
         title="Panel del rodeo"
-        subtitle="Peso, ganancia diaria y alertas de todo el rodeo en un vistazo."
+        subtitle={
+          loteElegido
+            ? `Peso, ganancia diaria y alertas del lote ${loteElegido.codigo}.`
+            : "Peso, ganancia diaria y alertas de todo el rodeo en un vistazo."
+        }
+        actions={
+          <Select
+            aria-label="Filtrar el panel por lote"
+            value={idLote ?? ""}
+            onChange={(e) => filtrarPorLote(e.target.value || null)}
+            className="w-56"
+          >
+            <option value="">Todo el rodeo</option>
+            {lotes?.map((lote) => (
+              <option key={lote.id} value={lote.id}>
+                Lote {lote.codigo}
+              </option>
+            ))}
+          </Select>
+        }
       />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
@@ -137,13 +186,13 @@ export default function PanelPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card className="flex min-w-0 flex-col gap-5">
-          <CardHeader title="Evolución del peso promedio" subtitle="Promedio del rodeo en cada fecha de pesaje" />
+          <CardHeader title="Evolución del peso promedio" subtitle={`Promedio ${alcance} en cada fecha de pesaje`} />
           <LineChart
             labels={puntos.map((punto) => formatearFechaCorta(punto.fecha))}
             series={[{ name: "Peso promedio", values: puntos.map((punto) => punto.peso_promedio_kg) }]}
             formatValue={(valor) => formatearKg(valor, 1)}
             formatAxis={(valor) => formatearKg(valor)}
-            ariaLabel="Evolución del peso promedio del rodeo"
+            ariaLabel={`Evolución del peso promedio ${alcance}`}
           />
           <div className="mt-auto">
             <LinkStrip to="/animales">Ver animales del rodeo</LinkStrip>
@@ -169,7 +218,7 @@ export default function PanelPage() {
       </div>
 
       <Card>
-        <CardHeader title="Reporte por período" subtitle="Pesajes y ganancia de peso entre dos fechas" />
+        <CardHeader title="Reporte por período" subtitle={`Pesajes y ganancia de peso ${alcance} entre dos fechas`} />
         <form onSubmit={consultarReporte} className="mt-5 flex flex-wrap items-end gap-4">
           <Field label="Desde" className="w-full sm:w-52">
             <Input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} required />
