@@ -1,4 +1,4 @@
-import { type KeyboardEvent, type PointerEvent, useEffect, useRef, useState } from "react";
+import { type KeyboardEvent, type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
 
 export type SeriesTone = "brand" | "earth";
 
@@ -84,18 +84,24 @@ function visibleLabelIndexes(count: number): Set<number> {
   return new Set([0, 1, 2, 3, 4].map((k) => Math.round((k * (count - 1)) / 4)));
 }
 
-function useWidth<T extends HTMLElement>() {
-  const ref = useRef<T>(null);
-  const [width, setWidth] = useState(600);
-  useEffect(() => {
-    const element = ref.current;
+/**
+ * Measures the container with a callback ref, so it also works when the chart mounts after
+ * an empty state. Width stays null until measured: drawing at a guessed width would push
+ * narrow layouts wider than the screen.
+ */
+function useWidth() {
+  const observer = useRef<ResizeObserver | null>(null);
+  const [width, setWidth] = useState<number | null>(null);
+  const ref = useCallback((element: HTMLDivElement | null) => {
+    observer.current?.disconnect();
+    observer.current = null;
     if (!element) return;
-    const observer = new ResizeObserver(([entry]) => {
-      if (entry) setWidth(Math.max(entry.contentRect.width, 240));
+    observer.current = new ResizeObserver(([entry]) => {
+      if (entry) setWidth(Math.max(Math.floor(entry.contentRect.width), 240));
     });
-    observer.observe(element);
-    return () => observer.disconnect();
+    observer.current.observe(element);
   }, []);
+  useEffect(() => () => observer.current?.disconnect(), []);
   return [ref, width] as const;
 }
 
@@ -109,13 +115,17 @@ export default function LineChart({
   height = 220,
   emptyMessage = "Todavía no hay suficientes datos para graficar.",
 }: LineChartProps) {
-  const [containerRef, width] = useWidth<HTMLDivElement>();
+  const [containerRef, measuredWidth] = useWidth();
   const [active, setActive] = useState<number | null>(null);
 
   const present = series.flatMap((s) => s.values.filter((v): v is number => v != null));
   if (labels.length < 2 || present.length < 2) {
     return <p className="py-8 text-sm text-neutral-500">{emptyMessage}</p>;
   }
+  if (measuredWidth == null) {
+    return <div ref={containerRef} className="w-full min-w-0" style={{ height }} />;
+  }
+  const width = measuredWidth;
 
   const ticks = axisTicks(Math.min(...present), Math.max(...present));
   const low = ticks[0]!;
@@ -145,7 +155,7 @@ export default function LineChart({
   const tooltipOnLeft = activeX > width / 2;
 
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div ref={containerRef} className="relative w-full min-w-0">
       <svg
         width={width}
         height={height}

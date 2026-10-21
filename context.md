@@ -14,17 +14,23 @@ de la API .NET (rama `feat/migracion-typescript`; detalle en
 
 ## Diseño visual
 
-El 19/10/2026 se rehizo toda la estética para parecerse a los mockups reales del
-proyecto, que se extrajeron de los PDF de diseño (`../Documentacion/TP7/Parte de avance
-de Análisis y Diseño (SISTEMA COMPLETO).pdf`, páginas 36-39, y
-`TP7_Parte_Avance_de_Diseño_V3.pdf`, páginas 5-7 — son capturas de pantalla de un
-prototipo ya construido, no bocetos a mano). Paleta: verde oscuro (`green-900`/`green-800`
-de Tailwind) como color primario, lima (`lime-300`) como acento de estados
-activos/positivos, fondo cálido (`stone-50`). Tipografía "Plus Jakarta Sans" (Google
-Fonts, cargada en `index.html`). Iconos: `lucide-react`.
+El 20/10/2026 se rediseñó toda la interfaz (`odd/tasks/rediseno-visual.md`). Del Figma
+de ZOCO (otro sistema, usado solo como referencia de estilo) se copió el lenguaje
+visual: tipografía Montserrat, iconos `lucide-react` de trazo 2 px, tiles KPI oscuros,
+tablas con encabezado gris y filas como tarjetas, pestañas subrayadas, gráfico de líneas
+suavizadas con tooltip oscuro y asistente por pasos. La paleta sale del design system de
+BovinoVision en Claude Design: verde como color de acción y marca, marrón para el
+contexto del animal (raza), fondo crema, tarjetas blancas, sombras tintadas en verde.
 
-Layout responsive sin JS: sidebar fija en desktop (`md:flex`), barra de navegación
-inferior en mobile (`md:hidden`) — ver `src/components/Layout.jsx`.
+- **Tokens:** `src/index.css` define en `@theme` solo los colores del design system
+  (`green-*`, `brown-*`, `cream`, `terracotta-*`, `neutral-*`, `success-*`, `warning-*`,
+  `danger-*`, `info-*`) y anula los de Tailwind (`--color-*: initial`): una clase como
+  `stone-100` o `lime-300` no genera estilo.
+- **Formato argentino:** números, pesos, fechas y porcentajes pasan por
+  `src/lib/formato.ts` (`452,5 kg`, `60 %`, `20/10/2026, 14:30`).
+- **Layout:** sidebar fija en desktop con logo y pastilla de fecha, barra inferior en
+  mobile — ver `src/components/Layout.tsx`. El emblema `public/logo-mark.png` viene del
+  design system.
 
 **Importante:** el propio documento de diseño (página 6) aclara explícitamente que los
 indicadores de "estado sanitario", grasa, musculatura y precio que aparecen en algunos
@@ -40,13 +46,16 @@ lugar (por ejemplo, "Alertas activas" en vez de "Estado Sanitario" en el panel).
   tipos del contrato están en `src/api/tipos.ts`.
 - `src/features/<nombre>/` — páginas y componentes propios de cada funcionalidad
   (`captura`, `animales`, `lotes`, `panel`, `alertas`).
-- `src/components/` — compartidos entre features: `Layout`, `BackendStatus`, `StatCard`,
-  `Badge`, `EvolucionChart` (gráfico de línea en SVG hecho a mano, sin librería de
-  charts).
+- `src/components/` — compartidos entre features: `Layout`, `BackendStatus`, `PageHeader`,
+  `Button` (+ `buttonStyles` para links), `Badge`, `Card`, `KpiTile`, `StatCard`, `Tabs`,
+  `Field` (`Input`, `Select`, `SearchInput`), `Table`, `Feedback` (`Notice`, `Loading`,
+  `EmptyState`), `ProgressBar`, `Stepper` y `LineChart` (gráfico SVG propio, sin librería
+  de charts, con hover y navegación por teclado).
+- `src/lib/formato.ts` — formato argentino de números y fechas.
 
 ## Simplificaciones deliberadas (y por qué)
 
-- **Sin fotos reales de animales:** las tarjetas usan un ícono (`PawPrint`) en vez de la
+- **Sin fotos reales de animales:** el rodeo se muestra como tabla, sin miniatura, en vez de la
   foto que muestra el mockup, porque el modelo de datos no guarda "la" foto de un animal
   (guarda fotos de captura por evento de pesaje, no una foto de perfil fija).
 - **Sin QR / escaneo de caravana:** el mockup lo insinúa pero no es una funcionalidad

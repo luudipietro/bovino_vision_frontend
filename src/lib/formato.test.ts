@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatearFecha,
   formatearFechaCorta,
+  formatearFechaHora,
   formatearHace,
   formatearKg,
   formatearNumero,
@@ -26,6 +27,11 @@ describe("formato", () => {
   it("reads API calendar dates as local dates", () => {
     expect(formatearFecha("2026-10-20")).toBe("20/10/2026");
     expect(formatearFechaCorta("2026-09-01")).toBe("1 sept");
+  });
+
+  it("shows date and time on a 24-hour clock", () => {
+    expect(formatearFechaHora("2026-10-19T22:05:00")).toBe("19/10/2026, 22:05");
+    expect(formatearFechaHora("2026-10-19T10:00:00")).toBe("19/10/2026, 10:00");
   });
 
   it("describes elapsed time", () => {

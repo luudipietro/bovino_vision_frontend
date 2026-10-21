@@ -139,7 +139,7 @@ export default function ListadoAnimalesPage() {
                 <span className="text-brown-600">{animal.raza ?? "Sin registrar"}</span>
               </Cell>
               <Cell label="Lote" muted>
-                {animal.lote_codigo ? `Lote ${animal.lote_codigo}` : "Sin lote"}
+                {animal.lote_codigo ?? "Sin lote"}
               </Cell>
               <Cell label="Último peso">
                 <span className="font-semibold tabular-nums">

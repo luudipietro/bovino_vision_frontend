@@ -18,7 +18,7 @@ Verificación: `npm run typecheck`, `npm run lint`, `npm run test` y `npm run bu
 | T2 | S1-S3 | delegada (paralelo) | hecha | Panel con tiles KPI, curva, cobertura de GMD y distribución por lote; alertas en filas tarjeta; `formatearGmd` en formato argentino (RED 3 tests, GREEN). typecheck 0, lint 2 previos, 19 tests, build OK. |
 | T3 | S1-S3 | delegada (paralelo) | hecha | Rodeo en tabla con búsqueda y filtro de lote, ficha con tiles, curva y timeline (`LineaDePesajes`), lotes con participación. typecheck 0, lint 2 previos, 19 tests, build OK. |
 | T4 | S1-S3 | delegada (paralelo) | hecha | Asistente de 4 pasos con `Stepper`, visor con encuadre, estimación y resultado. Pasos 2-4 revisados por código (headless solo captura el paso 1). typecheck 0, lint 2 previos, 19 tests, build OK. |
-| T5 | S1-S3 | inline | pendiente | Recorrido real a 390 px (Chrome headless no baja de 500 px), ajuste de ancho inicial de `LineChart`, alertas de demo, docs. |
+| T5 | S1-S3 | inline | hecha | `LineChart` sin ancho supuesto (callback ref, mide antes de dibujar); hora en 24 h en `formatearFechaHora` (RED/GREEN, 20 tests); lote sin "Lote" repetido en el rodeo móvil; recorrido con capturas de las 6 pantallas a 1440 px y a 390 px reales (iframe), sin scroll horizontal; README y `context.md` actualizados. |
 
 Ruta: T1 inline porque todas las pantallas dependen de ella. T2-T4 en paralelo: tres unidades independientes con superficies disjuntas (`src/features/panel` + `src/features/alertas/AlertasPage.tsx`; `src/features/animales` + `src/features/lotes`; `src/features/captura/components` + `CapturaPage.tsx`), cada una de varios archivos.
 
@@ -29,3 +29,5 @@ Ruta: T1 inline porque todas las pantallas dependen de ella. T2-T4 en paralelo: 
 - **L3 (usuario, 2026-10-20):** "podes usar ODD y subagentes si queres, y si es mejor para optimizar tokens y calidad"
 - **L4 (2026-10-20):** se borró el adaptador `EvolucionChart`. Datos de demo cargados por la API en la base local de Docker (lotes A-12, B-04, C-07; 9 animales con 5 pesajes cada uno, todos de 400 kg por el estimador simulado).
 - **L5 (usuario, 2026-10-20):** "antes de que te quedes sin tokens, mergea lo que hay hecho en la rama de rediseño a la rama manu"
+- **L6 (2026-10-20):** la API en Development usaba Neon porque los user secrets pisan `appsettings.Development.json`; los datos demo de L4 quedaron en Neon. Se reinició la API con `ConnectionStrings__BovinoVision` apuntando a Postgres local y se volvió a cargar la demo en local (C-07 con GMD objetivo 0,8 para tener alertas; pesos variados por SQL solo en eventos demo de A-12 y B-04). La limpieza de Neon queda a decisión del usuario.
+- **L7 (usuario, 2026-10-20):** "ok continua hasta que te quedes sin uso y despues continua automaticamente cuando se reinicie el limite. ahora la api esta usando la base local y no la de neon?"

@@ -10,6 +10,10 @@ Interfaz web de BovinoVision, construida con **React + Vite + Tailwind CSS** en
 - `src/features/` — una carpeta por funcionalidad (`captura`, `animales`, `lotes`, …), cada
   una con sus páginas y componentes propios.
 - `src/components/` — componentes de UI compartidos entre features.
+- `src/lib/formato.ts` — formato argentino de números y fechas.
+
+El diseño visual (Montserrat, iconos Lucide, paleta del design system de BovinoVision
+definida como tokens en `src/index.css`) está descripto en `context.md`.
 
 ## Requisitos
 
