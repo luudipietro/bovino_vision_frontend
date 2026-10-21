@@ -26,16 +26,22 @@ export function useCaptura() {
   const [resultado, setResultado] = useState<ResultadoCaptura | null>(null);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The API does not serve images: the session gallery shows the photos taken in this tab.
+  const [vistasPrevias, setVistasPrevias] = useState<Record<Uuid, string>>({});
+  const [versionGaleria, setVersionGaleria] = useState(0);
   // Polling stops when the page unmounts or the operator moves on.
   const consultaVigente = useRef(0);
+  const urlsCreadas = useRef<string[]>([]);
 
   useEffect(() => {
     const consultas = consultaVigente;
+    const urls = urlsCreadas;
     iniciarSesionCaptura()
       .then((sesion) => setIdSesion(sesion.id))
       .catch((err: unknown) => setError(mensajeDeError(err)));
     return () => {
       consultas.current++;
+      urls.current.forEach((url) => URL.revokeObjectURL(url));
     };
   }, []);
 
@@ -52,7 +58,12 @@ export function useCaptura() {
     setCargando(true);
     setError(null);
     try {
-      setCaptura(await subirCaptura({ idSesion, idAnimal: animal.id, archivo }));
+      const nueva = await subirCaptura({ idSesion, idAnimal: animal.id, archivo });
+      const url = URL.createObjectURL(archivo);
+      urlsCreadas.current.push(url);
+      setCaptura(nueva);
+      setVistasPrevias((actuales) => ({ ...actuales, [nueva.id]: url }));
+      setVersionGaleria((version) => version + 1);
     } catch (err) {
       setError(mensajeDeError(err));
     } finally {
@@ -75,6 +86,7 @@ export function useCaptura() {
       if (!final) return;
       setResultado(final);
       setPaso("resultado");
+      setVersionGaleria((version) => version + 1);
     } catch (err) {
       if (sigueVigente()) setError(mensajeDeError(err));
     }
@@ -133,6 +145,8 @@ export function useCaptura() {
 
   return {
     idSesion,
+    vistasPrevias,
+    versionGaleria,
     paso,
     animal,
     captura,

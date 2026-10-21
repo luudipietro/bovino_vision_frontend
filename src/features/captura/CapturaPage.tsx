@@ -5,6 +5,7 @@ import PageHeader from "../../components/PageHeader";
 import Stepper from "../../components/Stepper";
 import CapturarFoto from "./components/CapturarFoto";
 import EstimandoPeso from "./components/EstimandoPeso";
+import GaleriaSesion from "./components/GaleriaSesion";
 import IdentificarAnimal from "./components/IdentificarAnimal";
 import ResultadoPesaje from "./components/ResultadoPesaje";
 import { useCaptura } from "./useCaptura";
@@ -79,6 +80,11 @@ export default function CapturaPage() {
         <Stepper step={paso} total={TOTAL_PASOS} />
         {contenido}
       </Card>
+      <GaleriaSesion
+        idSesion={captura.idSesion}
+        version={captura.versionGaleria}
+        vistasPrevias={captura.vistasPrevias}
+      />
     </div>
   );
 }
