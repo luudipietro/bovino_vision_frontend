@@ -1,15 +1,30 @@
-import { Bell, Camera, ChartNoAxesColumn, CircleUserRound, LayoutGrid, PawPrint } from "lucide-react";
+import {
+  Bell,
+  Camera,
+  ChartNoAxesColumn,
+  CircleUserRound,
+  KeyRound,
+  LayoutGrid,
+  LogOut,
+  PawPrint,
+  type LucideIcon,
+  Users,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
+import { type Seccion, seccionesPermitidas } from "../features/auth/permisos";
+import { useSesion } from "../features/auth/useSesion";
 import BackendStatus from "./BackendStatus";
 
-const NAV_ITEMS = [
-  { to: "/captura", label: "Captura", icon: Camera },
-  { to: "/animales", label: "Rodeo", icon: PawPrint },
-  { to: "/lotes", label: "Lotes", icon: LayoutGrid },
-  { to: "/panel", label: "Panel", icon: ChartNoAxesColumn },
-  { to: "/alertas", label: "Alertas", icon: Bell },
-];
+const ICONOS: Record<Seccion["to"], LucideIcon> = {
+  "/captura": Camera,
+  "/animales": PawPrint,
+  "/lotes": LayoutGrid,
+  "/panel": ChartNoAxesColumn,
+  "/alertas": Bell,
+  "/usuarios": Users,
+  "/roles": KeyRound,
+};
 
 function Logo({ compact = false }: { compact?: boolean }) {
   return (
@@ -44,13 +59,19 @@ function DateTimePill() {
 }
 
 export default function Layout() {
+  const { sesion, cerrarSesion } = useSesion();
+  const navItems = seccionesPermitidas(sesion?.permisos ?? []).map((seccion) => ({
+    ...seccion,
+    icon: ICONOS[seccion.to],
+  }));
+
   return (
     <div className="flex min-h-screen">
       <aside className="sticky top-0 hidden h-screen w-[264px] shrink-0 flex-col border-r border-neutral-200 bg-white px-7 py-10 md:flex">
         <Logo />
 
         <nav className="mt-14 flex flex-1 flex-col gap-2" aria-label="Principal">
-          {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+          {navItems.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
@@ -69,10 +90,18 @@ export default function Layout() {
         <div className="flex items-center gap-3">
           <CircleUserRound className="h-9 w-9 shrink-0 text-green-500" />
           <div className="min-w-0">
-            <p className="truncate text-[15px] font-semibold text-neutral-800">Usuario Sistema</p>
-            <p className="text-xs text-neutral-500">Establecimiento único</p>
+            <p className="truncate text-[15px] font-semibold text-neutral-800">{sesion?.usuario.nombre}</p>
+            <p className="truncate text-xs text-neutral-500">{sesion?.usuario.rol}</p>
           </div>
         </div>
+        <button
+          type="button"
+          onClick={cerrarSesion}
+          className="mt-4 flex h-10 items-center gap-2 rounded-[10px] px-3 text-sm font-semibold text-neutral-700 transition-colors hover:bg-green-50"
+        >
+          <LogOut className="h-5 w-5" />
+          Cerrar sesión
+        </button>
         <div className="mt-5 rounded-[10px] border border-neutral-200 px-3 py-2.5 shadow-xs">
           <BackendStatus />
         </div>
@@ -81,6 +110,14 @@ export default function Layout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex items-center justify-between gap-3 border-b border-neutral-200 bg-white px-4 py-3 md:hidden">
           <Logo compact />
+          <button
+            type="button"
+            onClick={cerrarSesion}
+            aria-label="Cerrar sesión"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-700 hover:bg-green-50"
+          >
+            <LogOut className="h-5 w-5" />
+          </button>
         </header>
         <div className="hidden justify-end px-8 pt-10 md:flex lg:px-12">
           <DateTimePill />
@@ -96,7 +133,7 @@ export default function Layout() {
           aria-label="Principal"
           className="fixed inset-x-0 bottom-0 z-20 flex h-16 items-center justify-around border-t border-neutral-200 bg-white md:hidden"
         >
-          {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+          {navItems.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}

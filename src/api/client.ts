@@ -28,12 +28,33 @@ async function detalleDeError(response: Response): Promise<string | null> {
   }
 }
 
-async function manejarRespuesta<T>(response: Response): Promise<T> {
+type AvisoNoAutorizado = () => void;
+const avisosNoAutorizado = new Set<AvisoNoAutorizado>();
+
+/** Subscribes to "the session is gone" (a 401 from any call but the login); returns the unsubscribe. */
+export function alNoAutorizado(aviso: AvisoNoAutorizado): () => void {
+  avisosNoAutorizado.add(aviso);
+  return () => {
+    avisosNoAutorizado.delete(aviso);
+  };
+}
+
+async function manejarRespuesta<T>(response: Response, esInicioDeSesion: boolean): Promise<T> {
   if (!response.ok) {
+    // a wrong login answers 401 too, but that one is shown by the login page, not a lost session
+    if (response.status === 401 && !esInicioDeSesion) avisosNoAutorizado.forEach((aviso) => aviso());
     throw new ApiError(response.status, await detalleDeError(response));
   }
   const texto = await response.text();
   return (texto ? JSON.parse(texto) : undefined) as T;
+}
+
+/** Every request carries the session cookie. */
+function pedir<T>(method: string, path: string, init: RequestInit = {}): Promise<T> {
+  const esInicioDeSesion = method === "POST" && path === "/auth/sesion";
+  return fetch(`${API_URL}${path}`, { credentials: "include", ...init }).then((r) =>
+    manejarRespuesta<T>(r, esInicioDeSesion),
+  );
 }
 
 /** Builds a query string skipping empty values. */
@@ -47,15 +68,15 @@ export function query(parametros: Record<string, string | boolean | null | undef
 }
 
 export function apiGet<T>(path: string): Promise<T> {
-  return fetch(`${API_URL}${path}`).then((r) => manejarRespuesta<T>(r));
+  return pedir<T>("GET", path);
 }
 
 function enviarJson<T>(method: "POST" | "PUT", path: string, body?: unknown): Promise<T> {
-  return fetch(`${API_URL}${path}`, {
+  return pedir<T>(method, path, {
     method,
     headers: body === undefined ? undefined : { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
-  }).then((r) => manejarRespuesta<T>(r));
+  });
 }
 
 export function apiPostJson<T>(path: string, body?: unknown): Promise<T> {
@@ -67,13 +88,11 @@ export function apiPutJson<T>(path: string, body: unknown): Promise<T> {
 }
 
 export function apiDelete(path: string): Promise<void> {
-  return fetch(`${API_URL}${path}`, { method: "DELETE" }).then((r) => manejarRespuesta<void>(r));
+  return pedir<void>("DELETE", path, { method: "DELETE" });
 }
 
 export function apiPostForm<T>(path: string, formData: FormData): Promise<T> {
-  return fetch(`${API_URL}${path}`, { method: "POST", body: formData }).then((r) =>
-    manejarRespuesta<T>(r),
-  );
+  return pedir<T>("POST", path, { method: "POST", body: formData });
 }
 
 /** Message to show for any rejected request. */

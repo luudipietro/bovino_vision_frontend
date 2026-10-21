@@ -45,7 +45,7 @@ lugar (por ejemplo, "Alertas activas" en vez de "Estado Sanitario" en el panel).
   manejo de errores con la clase `ApiError`, que expone el `detail` de ProblemDetails). Los
   tipos del contrato están en `src/api/tipos.ts`.
 - `src/features/<nombre>/` — páginas y componentes propios de cada funcionalidad
-  (`captura`, `animales`, `lotes`, `panel`, `alertas`).
+  (`captura`, `animales`, `lotes`, `panel`, `alertas`, `auth`, `usuarios`, `roles`).
 - `src/components/` — compartidos entre features: `Layout`, `BackendStatus`, `PageHeader`,
   `Button` (+ `buttonStyles` para links), `Badge`, `Card`, `KpiTile`, `StatCard`, `Tabs`,
   `Field` (`Input`, `Select`, `SearchInput`), `Table`, `Feedback` (`Notice`, `Loading`,
@@ -103,12 +103,25 @@ muestra el error y se conserva la foto. Volver desde estimando corta la consulta
 estimación sigue en el servidor y su resultado se ve en la galería de la sesión; volver desde
 el resultado no toca el pesaje, que es inmutable.
 
+## Sesión y permisos
+
+- La sesión vive en una cookie `HttpOnly` que maneja el backend; el front no guarda ningún
+  token. `SesionProvider` consulta `GET /auth/sesion` al arrancar y expone el usuario y sus
+  permisos (`useSesion`, `usePuede`). `client.ts` manda `credentials: "include"` y avisa
+  (`alNoAutorizado`) ante cualquier 401 salvo el del propio `POST /auth/sesion`, que muestra la
+  página de login.
+- `features/auth/permisos.ts` es la regla pura: qué sección habilita cada permiso, qué permiso
+  pide cada ruta y cuál es la pantalla de inicio. `RutaProtegida` aplica esa regla (sin sesión
+  va a `/login`; sin permiso va al inicio del usuario). Esconder un botón no es seguridad: el
+  backend vuelve a validar cada request.
+- Usuarios y Roles siguen el patrón de Lotes (formularios en línea, lógica de formulario en
+  módulos puros con tests), pero cargan sus listas con un efecto que solo actualiza estado al
+  responder, para no sumar warnings de lint.
+
 ## Próximos pasos razonables (ninguno arrancado todavía)
 
 1. Dockerizar en serio (build + nginx) para el VPS de DonWeb.
-2. Cuando exista el módulo de Usuarios en el backend: pantalla de login y manejo de
-   sesión/token acá.
-3. Si se agrega modo offline en el backend (RF-16/RF-17), reflejarlo acá (cola local,
+2. Si se agrega modo offline en el backend (RF-16/RF-17), reflejarlo acá (cola local,
    IndexedDB, reintentos de sincronización).
 
 ## Flujo de trabajo con el usuario

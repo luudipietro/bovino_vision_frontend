@@ -184,3 +184,66 @@ export interface Reporte {
   peso_promedio_kg: number | null;
   gmd_promedio_kg_dia: number | null;
 }
+
+// Authentication, users and roles.
+
+export type CodigoPermiso =
+  | "capturas_registrar"
+  | "rodeo_gestionar"
+  | "rodeo_consultar"
+  | "analitica_consultar"
+  | "usuarios_gestionar"
+  | "roles_gestionar"
+  | "auditoria_consultar";
+
+export interface Usuario {
+  id: Uuid;
+  nombre: string;
+  correo: string;
+  id_rol: Uuid;
+  rol: string;
+  activo: boolean;
+  bloqueado_hasta: FechaHora | null;
+}
+
+/** Current session as returned by `POST` and `GET /auth/sesion`. */
+export interface Sesion {
+  usuario: Usuario;
+  permisos: CodigoPermiso[];
+  expira_en: FechaHora;
+}
+
+export interface Credenciales {
+  correo: string;
+  contrasena: string;
+}
+
+export interface NuevoUsuario {
+  nombre: string;
+  correo: string;
+  contrasena: string;
+  id_rol: Uuid;
+}
+
+export interface CambioRolUsuario {
+  id_rol: Uuid;
+}
+
+/** Omitted fields keep the stored data. */
+export interface CambiosUsuario {
+  nombre?: string;
+  correo?: string;
+  contrasena?: string;
+}
+
+export interface Rol {
+  id: Uuid;
+  nombre: string;
+  permisos: CodigoPermiso[];
+  cantidad_usuarios: number;
+}
+
+export interface Permiso {
+  codigo: CodigoPermiso;
+  descripcion: string;
+}

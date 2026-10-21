@@ -14,12 +14,14 @@ import LineChart from "../../components/LineChart";
 import PageHeader from "../../components/PageHeader";
 import { formatearFecha, formatearFechaCorta, formatearKg, formatearNumero } from "../../lib/formato";
 import { describirAlerta, formatearGmd, nivelDePrioridad } from "../alertas/textos";
+import { usePuede } from "../auth/useSesion";
 import CamposAnimal from "./CamposAnimal";
 import { cambiosDeAnimal, type FormularioAnimal, formularioDesde } from "./formularioAnimal";
 import LineaDePesajes from "./LineaDePesajes";
 import { useCatalogos } from "./useCatalogos";
 
 export default function FichaAnimalPage() {
+  const puedeGestionar = usePuede("rodeo_gestionar");
   const { id = "" } = useParams();
   const [animal, setAnimal] = useState<Animal | null>(null);
   const [pesajes, setPesajes] = useState<PesajeHistorial[]>([]);
@@ -109,7 +111,7 @@ export default function FichaAnimalPage() {
         title={animal.identificador}
         subtitle={metadatos.join(" · ")}
         actions={
-          !edicion && (
+          puedeGestionar && !edicion && (
             <Button
               variant="secondary"
               icon={Pencil}

@@ -1,5 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ApiError, apiGet, apiPostJson, query } from "./client";
+import {
+  ApiError,
+  alNoAutorizado,
+  apiDelete,
+  apiGet,
+  apiPostForm,
+  apiPostJson,
+  apiPutJson,
+  query,
+} from "./client";
 
 function responder(status: number, cuerpo?: unknown) {
   const texto = cuerpo === undefined ? "" : typeof cuerpo === "string" ? cuerpo : JSON.stringify(cuerpo);
@@ -28,7 +37,7 @@ describe("apiGet", () => {
     const fetchFalso = responder(200, { status: "ok" });
 
     await expect(apiGet("/health")).resolves.toEqual({ status: "ok" });
-    expect(fetchFalso).toHaveBeenCalledWith(`${BASE}/health`);
+    expect(fetchFalso).toHaveBeenCalledWith(`${BASE}/health`, { credentials: "include" });
   });
 
   it("raises the ProblemDetails detail with the status", async () => {
@@ -58,9 +67,63 @@ describe("apiPostJson", () => {
 
     await expect(apiPostJson("/pesajes", { id_captura: "c1" })).resolves.toBeUndefined();
     expect(fetchFalso).toHaveBeenCalledWith(`${BASE}/pesajes`, {
+      credentials: "include",
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id_captura: "c1" }),
     });
+  });
+});
+
+describe("session cookie", () => {
+  it("sends the credentials on every kind of request", async () => {
+    const fetchFalso = vi.fn().mockImplementation(() => Promise.resolve(new Response("{}", { status: 200 })));
+    vi.stubGlobal("fetch", fetchFalso);
+
+    await apiPutJson("/lotes/l1", { nombre: "A" });
+    await apiDelete("/auth/sesion");
+    await apiPostForm("/capturas", new FormData());
+
+    for (const [, init] of fetchFalso.mock.calls) {
+      expect(init).toMatchObject({ credentials: "include" });
+    }
+    expect(fetchFalso).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe("alNoAutorizado", () => {
+  it("notifies the listener on a 401 and still rejects with the API error", async () => {
+    const aviso = vi.fn();
+    const darDeBaja = alNoAutorizado(aviso);
+    responder(401, { detail: "Sesión vencida" });
+
+    await expect(apiGet("/animales")).rejects.toMatchObject({ status: 401, message: "Sesión vencida" });
+    expect(aviso).toHaveBeenCalledTimes(1);
+    darDeBaja();
+  });
+
+  it("does not notify for the login request itself, so the page can show its message", async () => {
+    const aviso = vi.fn();
+    const darDeBaja = alNoAutorizado(aviso);
+    responder(401, { detail: "Usuario o contraseña incorrectos." });
+
+    await expect(apiPostJson("/auth/sesion", { correo: "a", contrasena: "b" })).rejects.toThrow(
+      "Usuario o contraseña incorrectos.",
+    );
+    expect(aviso).not.toHaveBeenCalled();
+    darDeBaja();
+  });
+
+  it("does not notify for other statuses or after unsubscribing", async () => {
+    const aviso = vi.fn();
+    const darDeBaja = alNoAutorizado(aviso);
+    responder(403, { detail: "Sin permiso" });
+    await expect(apiGet("/usuarios")).rejects.toMatchObject({ status: 403 });
+    expect(aviso).not.toHaveBeenCalled();
+
+    darDeBaja();
+    responder(401);
+    await expect(apiGet("/animales")).rejects.toMatchObject({ status: 401 });
+    expect(aviso).not.toHaveBeenCalled();
   });
 });

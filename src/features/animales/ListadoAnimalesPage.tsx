@@ -12,6 +12,7 @@ import Field, { Input, SearchInput, Select } from "../../components/Field";
 import PageHeader from "../../components/PageHeader";
 import { Cell, TableHeader, TableRow } from "../../components/Table";
 import { formatearKg, formatearNumero } from "../../lib/formato";
+import { usePuede } from "../auth/useSesion";
 import CamposAnimal from "./CamposAnimal";
 import { FORMULARIO_VACIO, type FormularioAnimal, nuevoAnimalDesde } from "./formularioAnimal";
 import { useCatalogos } from "./useCatalogos";
@@ -19,6 +20,7 @@ import { useCatalogos } from "./useCatalogos";
 const COLUMNAS = "md:grid-cols-[1.4fr_1fr_0.8fr_0.9fr_1.2fr_auto]";
 
 export default function ListadoAnimalesPage() {
+  const puedeGestionar = usePuede("rodeo_gestionar");
   const [busqueda, setBusqueda] = useState("");
   const [idLote, setIdLote] = useState<Uuid | null>(null);
   const [animales, setAnimales] = useState<Animal[]>([]);
@@ -94,17 +96,19 @@ export default function ListadoAnimalesPage() {
             </option>
           ))}
         </Select>
-        <Button
-          icon={mostrarAlta ? X : Plus}
-          onClick={() => (mostrarAlta ? setMostrarAlta(false) : abrirAlta())}
-          aria-expanded={mostrarAlta}
-          className="md:ml-auto"
-        >
-          {mostrarAlta ? "Cerrar" : "Nuevo animal"}
-        </Button>
+        {puedeGestionar && (
+          <Button
+            icon={mostrarAlta ? X : Plus}
+            onClick={() => (mostrarAlta ? setMostrarAlta(false) : abrirAlta())}
+            aria-expanded={mostrarAlta}
+            className="md:ml-auto"
+          >
+            {mostrarAlta ? "Cerrar" : "Nuevo animal"}
+          </Button>
+        )}
       </div>
 
-      {mostrarAlta && (
+      {puedeGestionar && mostrarAlta && (
         <Card className="md:p-6">
           <form onSubmit={darDeAlta} className="space-y-4">
             <Field label="Identificador del nuevo animal" className="sm:max-w-sm">

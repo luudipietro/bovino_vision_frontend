@@ -6,12 +6,14 @@ import type { Animal } from "../../../api/tipos";
 import Button from "../../../components/Button";
 import { Notice } from "../../../components/Feedback";
 import { SearchInput } from "../../../components/Field";
+import { usePuede } from "../../auth/useSesion";
 
 export default function IdentificarAnimal({
   onSeleccionar,
 }: {
   onSeleccionar: (animal: Animal) => void;
 }) {
+  const puedeGestionar = usePuede("rodeo_gestionar");
   const [busqueda, setBusqueda] = useState("");
   const [resultados, setResultados] = useState<Animal[]>([]);
   const [buscando, setBuscando] = useState(false);
@@ -110,9 +112,11 @@ export default function IdentificarAnimal({
         <Notice
           className="mt-4"
           action={
-            <Button size="lg" icon={Plus} onClick={altaRapida} className="w-full sm:w-auto">
-              Dar de alta “{busqueda.trim()}”
-            </Button>
+            puedeGestionar && (
+              <Button size="lg" icon={Plus} onClick={altaRapida} className="w-full sm:w-auto">
+                Dar de alta “{busqueda.trim()}”
+              </Button>
+            )
           }
         >
           No hay ningún animal con la caravana “{busqueda.trim()}”.

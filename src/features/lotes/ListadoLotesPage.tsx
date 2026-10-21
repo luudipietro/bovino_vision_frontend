@@ -10,6 +10,7 @@ import Field, { Input } from "../../components/Field";
 import PageHeader from "../../components/PageHeader";
 import { Cell, TableHeader, TableRow } from "../../components/Table";
 import { formatearNumero, formatearPorcentaje } from "../../lib/formato";
+import { usePuede } from "../auth/useSesion";
 import {
   cambiosDeLote,
   FORMULARIO_LOTE_VACIO,
@@ -27,6 +28,7 @@ interface EdicionLote {
 }
 
 export default function ListadoLotesPage() {
+  const puedeGestionar = usePuede("rodeo_gestionar");
   const [lotes, setLotes] = useState<Lote[]>([]);
   const [nuevo, setNuevo] = useState<FormularioLote>(FORMULARIO_LOTE_VACIO);
   const [edicion, setEdicion] = useState<EdicionLote | null>(null);
@@ -95,6 +97,7 @@ export default function ListadoLotesPage() {
         subtitle={`${formatearNumero(lotes.length)} ${lotes.length === 1 ? "lote" : "lotes"}`}
       />
 
+      {puedeGestionar && (
       <Card className="md:p-6">
         <form
           onSubmit={agregarLote}
@@ -131,13 +134,16 @@ export default function ListadoLotesPage() {
           </Button>
         </form>
       </Card>
+      )}
 
       {error && <Notice tone="danger">{error}</Notice>}
       {cargando && <Loading />}
 
       {!cargando && lotes.length === 0 && (
         <EmptyState icon={LayoutGrid} title="No hay lotes creados todavía">
-          Creá el primero con su código para empezar a agrupar el rodeo.
+          {puedeGestionar
+            ? "Creá el primero con su código para empezar a agrupar el rodeo."
+            : "Todavía no se creó ningún lote."}
         </EmptyState>
       )}
 
@@ -150,7 +156,7 @@ export default function ListadoLotesPage() {
           {lotes.map((lote) => {
             const participacion = totalAnimales > 0 ? lote.cantidad_animales / totalAnimales : 0;
             const porcentaje = Math.round(participacion * 100);
-            if (edicion?.id === lote.id) {
+            if (puedeGestionar && edicion?.id === lote.id) {
               return (
                 <form
                   key={lote.id}
@@ -220,6 +226,7 @@ export default function ListadoLotesPage() {
                     ? `${formatearNumero(lote.gmd_objetivo, 2)} kg/día`
                     : "Sin objetivo"}
                 </Cell>
+                {puedeGestionar && (
                 <Button
                   variant="ghost"
                   icon={Pencil}
@@ -228,6 +235,7 @@ export default function ListadoLotesPage() {
                 >
                   Editar
                 </Button>
+                )}
               </TableRow>
             );
           })}

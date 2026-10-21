@@ -44,6 +44,20 @@ componentes React todavía no tienen tests porque requieren un DOM simulado
 (`@testing-library/react` + `jsdom`); los cambios de pantalla se validan con un recorrido en
 el navegador contra la API local.
 
+## Autenticación y permisos
+
+- `/login` está fuera del layout. Al cargar, la app consulta `GET /auth/sesion`; sin sesión
+  (o ante un 401 en cualquier llamada) lleva al login. La sesión es una cookie `HttpOnly` del
+  backend, por eso todas las llamadas usan `credentials: "include"`. En desarrollo el front
+  (`localhost:5173`) y la API (`localhost:8000`) son el mismo sitio, así que la cookie viaja.
+- El menú, las rutas y las acciones dependen de los permisos de la sesión
+  (`src/features/auth/permisos.ts`, con tests). Cada usuario entra a su pantalla de inicio:
+  Captura, Panel, Rodeo, Usuarios o Roles, según el primer permiso de esa lista. Las altas y
+  ediciones de animales y lotes requieren `rodeo_gestionar`.
+- Pantallas nuevas: **Usuarios** (`/usuarios`, filtro por rol, alta, edición, cambio de rol y
+  baja con confirmación) y **Roles** (`/roles`, casillas de permisos por rol). Los mensajes de
+  error del backend (401, 403, 409, 422, 429) se muestran tal como llegan en `detail`.
+
 ## Contrato con el backend
 
 - Los ids son UUID (`string`) y los campos van en snake_case en español (`id_lote`,
