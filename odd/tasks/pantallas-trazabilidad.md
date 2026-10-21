@@ -25,7 +25,7 @@ Verificación: `npm run test` (Vitest) para la lógica sin interfaz, `npm run ty
 | T2 | S1, S3 | inline | hecha | `formularioLote.ts` (RED: módulo inexistente; GREEN 8 tests: coma decimal, GMD positiva, solo lo cambiado), `modificarLote`; alta con código, nombre y GMD objetivo; edición en línea por lote. typecheck 0, lint (2 aceptados), 34 tests. Recorrido en T5. |
 | T3 | S1, S4 | inline | hecha | Selector de lote en el encabezado del panel: recarga el panel con `id_lote` (descarta respuestas viejas), pasa `id_lote` al reporte y limpia el reporte anterior al cambiar el alcance. Las alertas no tienen filtro por lote en la API: con un lote elegido se suman las `alertas_activas` de sus animales actuales. typecheck 0, lint (2 aceptados), 34 tests. Recorrido en T5. |
 | T4 | S1, S5 | inline | hecha | `GaleriaSesion.tsx` debajo del asistente: capturas de la sesión (más recientes primero) con animal, hora, estado y motivo de falla; vistas previas locales por id de captura (se liberan al salir); se recarga al subir una foto y al terminar una estimación. `estadoCaptura.ts` (RED/GREEN, 1 test). typecheck 0, lint (2 aceptados), 35 tests. Recorrido en T5. |
-| T5 | S1-S5 | inline + verificador | pendiente | Docs, recorrido en navegador y verificación independiente (riesgo 6: los componentes no tienen tests). |
+| T5 | S1-S5 | inline | hecha (prueba en navegador a cargo del usuario) | `context.md` actualizado. Lógica cubierta por 35 tests; typecheck 0, lint (2 aceptados), build OK. Recorrido en navegador y verificador independiente omitidos por pedido del usuario (L6). |
 
 Ruta inline: las unidades son chicas y comparten tipos y cliente; no hay disparador de escritor.
 
@@ -35,3 +35,5 @@ Ruta inline: las unidades son chicas y comparten tipos y cliente; no hay dispara
 - **L2 (relevamiento del backend):** `CambiosAnimal` y `CambiosLote` tratan `null` como "no cambiar"; `Animal.AsignarLote` con el lote vigente no hace nada; `Lote.DefinirGmdObjetivo` rechaza valores no positivos. `CapturaDeSesion` no incluye la imagen y no existe un endpoint que la sirva.
 - **L3 (fuera de esta feature):** estimador real (API de inferencia en Python, en desarrollo por el equipo) y autenticación; se tratan aparte.
 - **L4 (base de la rama):** `manu` ya incluía el rediseño visual (`5d9e004`, feature `rediseno-visual`) cuando se creó esta rama, así que las pantallas usan sus componentes (`Field`, `Select`, `Button`, `Card`, `Notice`) y su formato argentino (`lib/formato.ts`).
+- **L5 (recorrido parcial):** Lotes: GMD objetivo "0" mostró "La GMD objetivo debe ser positiva" sin llamar a la API. El resto del recorrido no se hizo.
+- **L6 (usuario, 2026-10-20):** "no verifiques en el navegador, ya lo pruebo yo." Se detuvo el recorrido; la verificación de pantallas queda a cargo del usuario y por eso no se lanzó el verificador independiente. API en 8000 (Postgres de Docker) y Vite en 5173 quedan corriendo para la prueba.

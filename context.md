@@ -68,6 +68,22 @@ lugar (por ejemplo, "Alertas activas" en vez de "Estado Sanitario" en el panel).
   `ListadoAnimalesPage.tsx` y `ListadoLotesPage.tsx`): es el patrón estándar de "mostrar
   cargando y disparar el fetch al entrar o cambiar de filtro", no un bug.
 
+## Datos editables y sus límites
+
+- **Animal:** el alta del Rodeo carga raza (catálogo `/razas`), sexo, fecha de nacimiento y
+  lote; la ficha permite editarlos y muestra el historial de lotes. Solo se envían los campos
+  que cambiaron (`formularioAnimal.ts`).
+- **Lote:** alta y edición en línea de nombre y GMD objetivo (`formularioLote.ts`, acepta coma
+  decimal y exige un valor positivo). Sin GMD objetivo nunca se dispara la alerta de
+  estancamiento.
+- **Límite del backend:** un `null` significa "no cambiar", así que un dato ya cargado se
+  puede cambiar pero no borrar; la interfaz no ofrece vaciarlo.
+- **Panel:** el selector de lote filtra el panel y el reporte. La API de alertas no filtra
+  por lote: con un lote elegido se suman las `alertas_activas` de sus animales actuales.
+- **Fotos de la sesión:** la pantalla de captura lista las capturas de la sesión con su
+  estado. La API no sirve imágenes, así que la miniatura solo aparece para las fotos tomadas
+  en esa pestaña.
+
 ## Pesaje asíncrono
 
 `useCaptura` registra la foto, pide el pesaje (202) y consulta el estado de la captura cada
