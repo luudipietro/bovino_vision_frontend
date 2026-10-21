@@ -51,6 +51,8 @@ el navegador contra la API local.
 - El pesaje es asíncrono: `POST /capturas` registra la foto (422 si la imagen no es
   válida), `POST /pesajes` responde 202 y la pantalla consulta `GET /capturas/{id}` cada
   segundo hasta `procesada` o `fallida`. Confirmar el resultado llama a
-  `POST /capturas/{id}/confirmar`.
+  `POST /capturas/{id}/confirmar`. En el paso de la foto, "Quitar foto" (o volver al paso
+  anterior con la foto ya cargada) llama a `DELETE /capturas/{id}`, que solo acepta capturas
+  `registrada`.
 - Las alertas son `perdida_peso` o `estancamiento`, con la GMD del intervalo en `variacion`
   (kg/día) y prioridad numérica (1 es la más urgente).

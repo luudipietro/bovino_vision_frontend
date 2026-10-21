@@ -1,4 +1,6 @@
+import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
+import Button from "../../components/Button";
 import Card from "../../components/Card";
 import { Loading, Notice } from "../../components/Feedback";
 import PageHeader from "../../components/PageHeader";
@@ -65,9 +67,12 @@ export default function CapturaPage() {
         animal={captura.animal}
         captura={captura.captura}
         cargando={captura.cargando}
+        quitandoFoto={captura.quitandoFoto}
+        aviso={captura.aviso}
         error={captura.error}
         onSubirFoto={captura.subirFoto}
         onReintentar={captura.reintentarFoto}
+        onQuitarFoto={captura.quitarFoto}
         onProcesarPesaje={captura.procesarPesaje}
       />
     );
@@ -79,6 +84,16 @@ export default function CapturaPage() {
       <Card className="space-y-6">
         <Stepper step={paso} total={TOTAL_PASOS} />
         {contenido}
+        {captura.retroceso && (
+          <Button
+            variant="ghost"
+            icon={ArrowLeft}
+            disabled={captura.cargando}
+            onClick={() => void captura.volver()}
+          >
+            {captura.retroceso.etiqueta}
+          </Button>
+        )}
       </Card>
       <GaleriaSesion
         idSesion={captura.idSesion}

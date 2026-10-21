@@ -1,5 +1,5 @@
-import { ArrowRight, Camera, ImagePlus, RefreshCcw } from "lucide-react";
-import { type ChangeEvent, useRef, useState } from "react";
+import { ArrowRight, Camera, ImagePlus, RefreshCcw, Trash2 } from "lucide-react";
+import { type ChangeEvent, useEffect, useRef, useState } from "react";
 import type { Animal, Captura } from "../../../api/tipos";
 import Button from "../../../components/Button";
 import { Loading, Notice } from "../../../components/Feedback";
@@ -8,9 +8,12 @@ interface CapturarFotoProps {
   animal: Animal;
   captura: Captura | null;
   cargando: boolean;
+  quitandoFoto: boolean;
+  aviso: string | null;
   error: string | null;
   onSubirFoto: (archivo: File) => void;
   onReintentar: () => void;
+  onQuitarFoto: () => Promise<boolean>;
   onProcesarPesaje: () => void;
 }
 
@@ -20,27 +23,48 @@ export default function CapturarFoto({
   animal,
   captura,
   cargando,
+  quitandoFoto,
+  aviso,
   error,
   onSubirFoto,
   onReintentar,
+  onQuitarFoto,
   onProcesarPesaje,
 }: CapturarFotoProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const inputCamara = useRef<HTMLInputElement>(null);
   const inputGaleria = useRef<HTMLInputElement>(null);
+  const urlCreada = useRef<string | null>(null);
+
+  useEffect(
+    () => () => {
+      if (urlCreada.current) URL.revokeObjectURL(urlCreada.current);
+    },
+    [],
+  );
+
+  function mostrarVistaPrevia(url: string | null) {
+    if (urlCreada.current) URL.revokeObjectURL(urlCreada.current);
+    urlCreada.current = url;
+    setPreviewUrl(url);
+  }
 
   function manejarArchivo(event: ChangeEvent<HTMLInputElement>) {
     const archivo = event.target.files?.[0];
     event.target.value = "";
     if (!archivo) return;
 
-    setPreviewUrl(URL.createObjectURL(archivo));
+    mostrarVistaPrevia(URL.createObjectURL(archivo));
     onSubirFoto(archivo);
   }
 
   function reintentar() {
-    setPreviewUrl(null);
+    mostrarVistaPrevia(null);
     onReintentar();
+  }
+
+  async function quitar() {
+    if (await onQuitarFoto()) mostrarVistaPrevia(null);
   }
 
   return (
@@ -113,7 +137,12 @@ export default function CapturarFoto({
         </div>
       )}
 
-      {cargando && <Loading>Subiendo foto…</Loading>}
+      {aviso && !captura && (
+        <Notice tone="neutral" className="mt-4">
+          {aviso}
+        </Notice>
+      )}
+      {cargando && <Loading>{quitandoFoto ? "Quitando foto…" : "Subiendo foto…"}</Loading>}
       {error && captura && (
         <Notice tone="danger" className="mt-4">
           {error}
@@ -147,6 +176,16 @@ export default function CapturarFoto({
             className="w-full"
           >
             Procesar pesaje
+          </Button>
+          <Button
+            variant="secondary"
+            size="lg"
+            icon={Trash2}
+            disabled={cargando}
+            onClick={quitar}
+            className="w-full"
+          >
+            Quitar foto
           </Button>
         </div>
       )}

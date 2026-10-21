@@ -94,6 +94,15 @@ pesar otro animal. Una captura `fallida` no se reintenta: se registra una nueva.
 desarrollo, `StrictMode` monta la página dos veces y abre dos sesiones de captura (ya pasaba
 antes de la migración).
 
+**Volver atrás:** cada paso (menos el primero) tiene un botón "Volver" definido en
+`navegacion.ts` (función pura con test). Desde la foto se vuelve a identificar al animal; desde
+estimando y desde el resultado, a la foto del mismo animal. Subir la foto ya registra una
+captura `registrada`, así que "Quitar foto" y volver desde la foto llaman a
+`DELETE /capturas/{id}` para no dejar capturas "Sin procesar" en la galería; si falla, se
+muestra el error y se conserva la foto. Volver desde estimando corta la consulta pero la
+estimación sigue en el servidor y su resultado se ve en la galería de la sesión; volver desde
+el resultado no toca el pesaje, que es inmutable.
+
 ## Próximos pasos razonables (ninguno arrancado todavía)
 
 1. Dockerizar en serio (build + nginx) para el VPS de DonWeb.

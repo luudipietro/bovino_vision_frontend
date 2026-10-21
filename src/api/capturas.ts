@@ -1,4 +1,4 @@
-import { apiGet, apiPostForm, apiPostJson } from "./client";
+import { apiDelete, apiGet, apiPostForm, apiPostJson } from "./client";
 import type { Captura, CapturaDeSesion, SesionCaptura, Uuid } from "./tipos";
 
 export function iniciarSesionCaptura(): Promise<SesionCaptura> {
@@ -29,6 +29,11 @@ export function obtenerCaptura(idCaptura: Uuid): Promise<Captura> {
 /** Operator acknowledges the result (CU-15); it never changes the weighing event. */
 export function confirmarCaptura(idCaptura: Uuid): Promise<Captura> {
   return apiPostJson(`/capturas/${idCaptura}/confirmar`);
+}
+
+/** Discards a photo that was not sent to estimation (204); the API answers 422 for any other state. */
+export function descartarCaptura(idCaptura: Uuid): Promise<void> {
+  return apiDelete(`/capturas/${idCaptura}`);
 }
 
 export function listarCapturasDeSesion(idSesion: Uuid): Promise<CapturaDeSesion[]> {

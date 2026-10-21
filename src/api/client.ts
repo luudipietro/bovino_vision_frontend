@@ -66,6 +66,10 @@ export function apiPutJson<T>(path: string, body: unknown): Promise<T> {
   return enviarJson<T>("PUT", path, body);
 }
 
+export function apiDelete(path: string): Promise<void> {
+  return fetch(`${API_URL}${path}`, { method: "DELETE" }).then((r) => manejarRespuesta<void>(r));
+}
+
 export function apiPostForm<T>(path: string, formData: FormData): Promise<T> {
   return fetch(`${API_URL}${path}`, { method: "POST", body: formData }).then((r) =>
     manejarRespuesta<T>(r),
