@@ -1,6 +1,7 @@
 import { apiGet, apiPostJson, apiPutJson, query } from "./client";
 import type {
   Animal,
+  AsignacionLote,
   CambiosAnimal,
   FiltroAnimales,
   NuevoAnimal,
@@ -29,4 +30,9 @@ export function modificarAnimal(idAnimal: Uuid, cambios: CambiosAnimal): Promise
 /** Weighing events of the animal, newest first. */
 export function historialDePesajes(idAnimal: Uuid): Promise<PesajeHistorial[]> {
   return apiGet(`/animales/${idAnimal}/pesajes`);
+}
+
+/** Lot membership periods of the animal. */
+export function historialDeLotes(idAnimal: Uuid): Promise<AsignacionLote[]> {
+  return apiGet(`/animales/${idAnimal}/historial-lotes`);
 }

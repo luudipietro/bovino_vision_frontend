@@ -51,6 +51,14 @@ export interface NuevoAnimal {
 
 export type CambiosAnimal = Omit<NuevoAnimal, "identificador">;
 
+/** One period of the animal in a lot; `vigente_hasta` is null for the current one. */
+export interface AsignacionLote {
+  id_lote: Uuid;
+  lote_codigo: string;
+  vigente_desde: FechaHora;
+  vigente_hasta: FechaHora | null;
+}
+
 export interface FiltroAnimales {
   idLote?: Uuid | null;
   q?: string;

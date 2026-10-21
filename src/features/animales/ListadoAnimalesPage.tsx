@@ -3,8 +3,7 @@ import { type FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { crearAnimal, listarAnimales } from "../../api/animales";
 import { mensajeDeError } from "../../api/client";
-import { listarLotes } from "../../api/lotes";
-import type { Animal, Lote, Uuid } from "../../api/tipos";
+import type { Animal, Uuid } from "../../api/tipos";
 import Badge from "../../components/Badge";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
@@ -13,24 +12,23 @@ import Field, { Input, SearchInput, Select } from "../../components/Field";
 import PageHeader from "../../components/PageHeader";
 import { Cell, TableHeader, TableRow } from "../../components/Table";
 import { formatearKg, formatearNumero } from "../../lib/formato";
+import CamposAnimal from "./CamposAnimal";
+import { FORMULARIO_VACIO, type FormularioAnimal, nuevoAnimalDesde } from "./formularioAnimal";
+import { useCatalogos } from "./useCatalogos";
 
 const COLUMNAS = "md:grid-cols-[1.4fr_1fr_0.8fr_0.9fr_1.2fr_auto]";
 
 export default function ListadoAnimalesPage() {
   const [busqueda, setBusqueda] = useState("");
   const [idLote, setIdLote] = useState<Uuid | null>(null);
-  const [lotes, setLotes] = useState<Lote[]>([]);
   const [animales, setAnimales] = useState<Animal[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mostrarAlta, setMostrarAlta] = useState(false);
   const [nuevoIdentificador, setNuevoIdentificador] = useState("");
-
-  useEffect(() => {
-    listarLotes()
-      .then(setLotes)
-      .catch(() => {});
-  }, []);
+  const [nuevosDatos, setNuevosDatos] = useState<FormularioAnimal>(FORMULARIO_VACIO);
+  const [errorAlta, setErrorAlta] = useState<string | null>(null);
+  const { razas, lotes } = useCatalogos();
 
   useEffect(() => {
     // A newer search or filter makes this response stale.
@@ -45,17 +43,24 @@ export default function ListadoAnimalesPage() {
     };
   }, [busqueda, idLote]);
 
-  async function altaRapida(event: FormEvent<HTMLFormElement>) {
+  function abrirAlta() {
+    // A new animal starts in the lot being viewed, if any.
+    setNuevosDatos({ ...FORMULARIO_VACIO, idLote: idLote ?? "" });
+    setErrorAlta(null);
+    setMostrarAlta(true);
+  }
+
+  async function darDeAlta(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const identificador = nuevoIdentificador.trim();
-    if (!identificador) return;
+    if (!nuevoIdentificador.trim()) return;
+    setErrorAlta(null);
     try {
-      const animal = await crearAnimal({ identificador });
+      const animal = await crearAnimal(nuevoAnimalDesde(nuevoIdentificador, nuevosDatos));
       setAnimales((actuales) => [animal, ...actuales]);
       setNuevoIdentificador("");
       setMostrarAlta(false);
     } catch (err) {
-      setError(mensajeDeError(err));
+      setErrorAlta(mensajeDeError(err));
     }
   }
 
@@ -91,7 +96,7 @@ export default function ListadoAnimalesPage() {
         </Select>
         <Button
           icon={mostrarAlta ? X : Plus}
-          onClick={() => setMostrarAlta((valor) => !valor)}
+          onClick={() => (mostrarAlta ? setMostrarAlta(false) : abrirAlta())}
           aria-expanded={mostrarAlta}
           className="md:ml-auto"
         >
@@ -101,16 +106,19 @@ export default function ListadoAnimalesPage() {
 
       {mostrarAlta && (
         <Card className="md:p-6">
-          <form onSubmit={altaRapida} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <Field label="Identificador del nuevo animal" className="sm:max-w-sm sm:flex-1">
+          <form onSubmit={darDeAlta} className="space-y-4">
+            <Field label="Identificador del nuevo animal" className="sm:max-w-sm">
               <Input
                 type="text"
                 autoFocus
+                required
                 value={nuevoIdentificador}
                 onChange={(e) => setNuevoIdentificador(e.target.value)}
                 placeholder="Caravana o identificador"
               />
             </Field>
+            <CamposAnimal valor={nuevosDatos} onChange={setNuevosDatos} razas={razas} lotes={lotes} />
+            {errorAlta && <Notice tone="danger">{errorAlta}</Notice>}
             <Button type="submit">Agregar</Button>
           </form>
         </Card>

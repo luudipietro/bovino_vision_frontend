@@ -1,10 +1,12 @@
-import { ArrowLeft, Scale } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowLeft, Pencil, Scale } from "lucide-react";
+import { type FormEvent, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { listarAlertasDeAnimal } from "../../api/alertas";
-import { historialDePesajes, obtenerAnimal } from "../../api/animales";
+import { historialDeLotes, historialDePesajes, modificarAnimal, obtenerAnimal } from "../../api/animales";
 import { mensajeDeError } from "../../api/client";
-import type { Alerta, Animal, PesajeHistorial } from "../../api/tipos";
+import type { Alerta, Animal, AsignacionLote, PesajeHistorial } from "../../api/tipos";
+import Badge from "../../components/Badge";
+import Button from "../../components/Button";
 import Card, { CardHeader } from "../../components/Card";
 import { EmptyState, Loading, Notice } from "../../components/Feedback";
 import KpiTile from "../../components/KpiTile";
@@ -12,24 +14,59 @@ import LineChart from "../../components/LineChart";
 import PageHeader from "../../components/PageHeader";
 import { formatearFecha, formatearFechaCorta, formatearKg, formatearNumero } from "../../lib/formato";
 import { describirAlerta, formatearGmd, nivelDePrioridad } from "../alertas/textos";
+import CamposAnimal from "./CamposAnimal";
+import { cambiosDeAnimal, type FormularioAnimal, formularioDesde } from "./formularioAnimal";
 import LineaDePesajes from "./LineaDePesajes";
+import { useCatalogos } from "./useCatalogos";
 
 export default function FichaAnimalPage() {
   const { id = "" } = useParams();
   const [animal, setAnimal] = useState<Animal | null>(null);
   const [pesajes, setPesajes] = useState<PesajeHistorial[]>([]);
   const [alertas, setAlertas] = useState<Alerta[]>([]);
+  const [lotesDelAnimal, setLotesDelAnimal] = useState<AsignacionLote[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [edicion, setEdicion] = useState<FormularioAnimal | null>(null);
+  const [guardando, setGuardando] = useState(false);
+  const [errorEdicion, setErrorEdicion] = useState<string | null>(null);
+  const { razas, lotes } = useCatalogos();
 
   useEffect(() => {
-    Promise.all([obtenerAnimal(id), historialDePesajes(id), listarAlertasDeAnimal(id)])
-      .then(([datosAnimal, historial, alertasAnimal]) => {
+    Promise.all([
+      obtenerAnimal(id),
+      historialDePesajes(id),
+      listarAlertasDeAnimal(id),
+      historialDeLotes(id),
+    ])
+      .then(([datosAnimal, historial, alertasAnimal, asignaciones]) => {
         setAnimal(datosAnimal);
         setPesajes(historial);
         setAlertas(alertasAnimal);
+        setLotesDelAnimal(asignaciones);
       })
       .catch((err: unknown) => setError(mensajeDeError(err)));
   }, [id]);
+
+  async function guardarEdicion(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!animal || !edicion) return;
+    const cambios = cambiosDeAnimal(animal, edicion);
+    if (Object.keys(cambios).length === 0) {
+      setEdicion(null);
+      return;
+    }
+    setGuardando(true);
+    setErrorEdicion(null);
+    try {
+      setAnimal(await modificarAnimal(animal.id, cambios));
+      if (cambios.id_lote) setLotesDelAnimal(await historialDeLotes(animal.id));
+      setEdicion(null);
+    } catch (err) {
+      setErrorEdicion(mensajeDeError(err));
+    } finally {
+      setGuardando(false);
+    }
+  }
 
   const volver = (
     <Link
@@ -68,7 +105,51 @@ export default function FichaAnimalPage() {
   return (
     <section className="space-y-6">
       {volver}
-      <PageHeader title={animal.identificador} subtitle={metadatos.join(" · ")} />
+      <PageHeader
+        title={animal.identificador}
+        subtitle={metadatos.join(" · ")}
+        actions={
+          !edicion && (
+            <Button
+              variant="secondary"
+              icon={Pencil}
+              onClick={() => {
+                setErrorEdicion(null);
+                setEdicion(formularioDesde(animal));
+              }}
+            >
+              Editar datos
+            </Button>
+          )
+        }
+      />
+
+      {edicion && (
+        <Card className="md:p-6">
+          <form onSubmit={guardarEdicion} className="space-y-4">
+            <CardHeader
+              title="Editar datos del animal"
+              subtitle="Un dato ya cargado se puede cambiar, pero no dejar vacío."
+            />
+            <CamposAnimal
+              valor={edicion}
+              onChange={setEdicion}
+              razas={razas}
+              lotes={lotes}
+              original={formularioDesde(animal)}
+            />
+            {errorEdicion && <Notice tone="danger">{errorEdicion}</Notice>}
+            <div className="flex gap-2">
+              <Button type="submit" disabled={guardando}>
+                {guardando ? "Guardando…" : "Guardar cambios"}
+              </Button>
+              <Button variant="ghost" onClick={() => setEdicion(null)} disabled={guardando}>
+                Cancelar
+              </Button>
+            </div>
+          </form>
+        </Card>
+      )}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiTile
@@ -129,6 +210,29 @@ export default function FichaAnimalPage() {
           </div>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader title="Historial de lotes" subtitle="Cada pesaje se asocia al lote vigente en su fecha" />
+        {lotesDelAnimal.length === 0 ? (
+          <p className="mt-4 text-sm text-neutral-500">Nunca estuvo asignado a un lote.</p>
+        ) : (
+          <ul className="mt-4 space-y-2">
+            {lotesDelAnimal.map((asignacion) => (
+              <li
+                key={`${asignacion.id_lote}-${asignacion.vigente_desde}`}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-neutral-200 px-4 py-3 text-sm"
+              >
+                <span className="font-semibold text-neutral-800">Lote {asignacion.lote_codigo}</span>
+                <span className="flex items-center gap-2 text-xs text-neutral-500">
+                  {formatearFecha(asignacion.vigente_desde)} –{" "}
+                  {asignacion.vigente_hasta ? formatearFecha(asignacion.vigente_hasta) : "hoy"}
+                  {!asignacion.vigente_hasta && <Badge tone="brand">Vigente</Badge>}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
     </section>
   );
 }
