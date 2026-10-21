@@ -22,7 +22,7 @@ Verificación: `npm run test` (Vitest) para la lógica sin interfaz, `npm run ty
 | ID | Specs | Ruta | Estado | Evidencia / commit |
 | --- | --- | --- | --- | --- |
 | T1 | S1, S2 | inline | hecha | `formularioAnimal.ts` (RED: módulo inexistente; GREEN 6 tests), `CamposAnimal.tsx`, `useCatalogos.ts`; alta completa en el Rodeo (arranca con el lote filtrado), edición en la ficha con `PUT` solo de lo cambiado e historial de lotes. typecheck 0, lint (2 aceptados), 26 tests. Recorrido en T5. |
-| T2 | S1, S3 | inline | pendiente | Alta y edición de lotes con nombre y GMD objetivo. |
+| T2 | S1, S3 | inline | hecha | `formularioLote.ts` (RED: módulo inexistente; GREEN 8 tests: coma decimal, GMD positiva, solo lo cambiado), `modificarLote`; alta con código, nombre y GMD objetivo; edición en línea por lote. typecheck 0, lint (2 aceptados), 34 tests. Recorrido en T5. |
 | T3 | S1, S4 | inline | pendiente | Filtro por lote en panel y reporte. |
 | T4 | S1, S5 | inline | pendiente | Galería de la sesión de captura. |
 | T5 | S1-S5 | inline + verificador | pendiente | Docs, recorrido en navegador y verificación independiente (riesgo 6: los componentes no tienen tests). |

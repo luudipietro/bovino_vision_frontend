@@ -27,6 +27,9 @@ export interface NuevoLote {
   gmd_objetivo?: number | null;
 }
 
+/** Null values keep the stored data. */
+export type CambiosLote = Omit<NuevoLote, "codigo">;
+
 export interface Animal {
   id: Uuid;
   identificador: string;

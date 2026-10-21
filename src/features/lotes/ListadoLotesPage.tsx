@@ -1,8 +1,8 @@
-import { LayoutGrid, Plus } from "lucide-react";
+import { LayoutGrid, Pencil, Plus } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { mensajeDeError } from "../../api/client";
-import { crearLote, listarLotes } from "../../api/lotes";
-import type { Lote } from "../../api/tipos";
+import { crearLote, listarLotes, modificarLote } from "../../api/lotes";
+import type { Lote, Uuid } from "../../api/tipos";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import { EmptyState, Loading, Notice } from "../../components/Feedback";
@@ -10,12 +10,26 @@ import Field, { Input } from "../../components/Field";
 import PageHeader from "../../components/PageHeader";
 import { Cell, TableHeader, TableRow } from "../../components/Table";
 import { formatearNumero, formatearPorcentaje } from "../../lib/formato";
+import {
+  cambiosDeLote,
+  FORMULARIO_LOTE_VACIO,
+  type FormularioLote,
+  formularioDeLote,
+  nuevoLoteDesde,
+} from "./formularioLote";
 
-const COLUMNAS = "md:grid-cols-[1fr_1.2fr_0.8fr_1.6fr_1fr]";
+const COLUMNAS = "md:grid-cols-[1fr_1.2fr_0.8fr_1.6fr_1fr_auto]";
+
+interface EdicionLote {
+  id: Uuid;
+  formulario: FormularioLote;
+  error: string | null;
+}
 
 export default function ListadoLotesPage() {
   const [lotes, setLotes] = useState<Lote[]>([]);
-  const [codigoNuevo, setCodigoNuevo] = useState("");
+  const [nuevo, setNuevo] = useState<FormularioLote>(FORMULARIO_LOTE_VACIO);
+  const [edicion, setEdicion] = useState<EdicionLote | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,15 +45,45 @@ export default function ListadoLotesPage() {
 
   async function agregarLote(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!codigoNuevo.trim()) return;
+    if (!nuevo.codigo.trim()) return;
     setError(null);
+    const datos = nuevoLoteDesde(nuevo);
+    if ("error" in datos) {
+      setError(datos.error);
+      return;
+    }
     try {
-      await crearLote({ codigo: codigoNuevo.trim() });
-      setCodigoNuevo("");
+      await crearLote(datos.lote);
+      setNuevo(FORMULARIO_LOTE_VACIO);
       recargar();
     } catch (err) {
       setError(mensajeDeError(err));
     }
+  }
+
+  async function guardarEdicion(event: FormEvent<HTMLFormElement>, lote: Lote) {
+    event.preventDefault();
+    if (!edicion) return;
+    const resultado = cambiosDeLote(lote, edicion.formulario);
+    if ("error" in resultado) {
+      setEdicion({ ...edicion, error: resultado.error });
+      return;
+    }
+    if (Object.keys(resultado.cambios).length === 0) {
+      setEdicion(null);
+      return;
+    }
+    try {
+      const actualizado = await modificarLote(lote.id, resultado.cambios);
+      setLotes((actuales) => actuales.map((l) => (l.id === actualizado.id ? actualizado : l)));
+      setEdicion(null);
+    } catch (err) {
+      setEdicion({ ...edicion, error: mensajeDeError(err) });
+    }
+  }
+
+  function cambiarEdicion(campo: keyof FormularioLote, valor: string) {
+    if (edicion) setEdicion({ ...edicion, formulario: { ...edicion.formulario, [campo]: valor } });
   }
 
   const totalAnimales = lotes.reduce((suma, lote) => suma + lote.cantidad_animales, 0);
@@ -52,13 +96,34 @@ export default function ListadoLotesPage() {
       />
 
       <Card className="md:p-6">
-        <form onSubmit={agregarLote} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <Field label="Código de lote" className="sm:max-w-sm sm:flex-1">
+        <form
+          onSubmit={agregarLote}
+          className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1.4fr_1fr_auto] sm:items-end"
+        >
+          <Field label="Código de lote">
             <Input
               type="text"
-              value={codigoNuevo}
-              onChange={(e) => setCodigoNuevo(e.target.value)}
+              required
+              value={nuevo.codigo}
+              onChange={(e) => setNuevo({ ...nuevo, codigo: e.target.value })}
               placeholder="Por ejemplo, A1"
+            />
+          </Field>
+          <Field label="Nombre (opcional)">
+            <Input
+              type="text"
+              value={nuevo.nombre}
+              onChange={(e) => setNuevo({ ...nuevo, nombre: e.target.value })}
+              placeholder="Por ejemplo, Recría"
+            />
+          </Field>
+          <Field label="GMD objetivo, kg/día (opcional)">
+            <Input
+              type="text"
+              inputMode="decimal"
+              value={nuevo.gmdObjetivo}
+              onChange={(e) => setNuevo({ ...nuevo, gmdObjetivo: e.target.value })}
+              placeholder="Por ejemplo, 0,8"
             />
           </Field>
           <Button type="submit" icon={Plus}>
@@ -80,11 +145,50 @@ export default function ListadoLotesPage() {
         <div className="space-y-2">
           <TableHeader
             columns={COLUMNAS}
-            labels={["Lote", "Nombre", "Animales", "Participación", "GMD objetivo"]}
+            labels={["Lote", "Nombre", "Animales", "Participación", "GMD objetivo", "Acciones"]}
           />
           {lotes.map((lote) => {
             const participacion = totalAnimales > 0 ? lote.cantidad_animales / totalAnimales : 0;
             const porcentaje = Math.round(participacion * 100);
+            if (edicion?.id === lote.id) {
+              return (
+                <form
+                  key={lote.id}
+                  onSubmit={(event) => guardarEdicion(event, lote)}
+                  className="space-y-3 rounded-[10px] border border-green-300 bg-white px-6 py-5"
+                >
+                  <p className="text-sm font-bold text-neutral-800">Editar lote {lote.codigo}</p>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <Field label="Nombre">
+                      <Input
+                        type="text"
+                        autoFocus
+                        value={edicion.formulario.nombre}
+                        onChange={(e) => cambiarEdicion("nombre", e.target.value)}
+                      />
+                    </Field>
+                    <Field label="GMD objetivo (kg/día)">
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        value={edicion.formulario.gmdObjetivo}
+                        onChange={(e) => cambiarEdicion("gmdObjetivo", e.target.value)}
+                      />
+                    </Field>
+                  </div>
+                  <p className="text-[11px] text-neutral-500">
+                    Un dato ya cargado se puede cambiar, pero no dejar vacío.
+                  </p>
+                  {edicion.error && <Notice tone="danger">{edicion.error}</Notice>}
+                  <div className="flex gap-2">
+                    <Button type="submit">Guardar cambios</Button>
+                    <Button variant="ghost" onClick={() => setEdicion(null)}>
+                      Cancelar
+                    </Button>
+                  </div>
+                </form>
+              );
+            }
             return (
               <TableRow key={lote.id} columns={COLUMNAS}>
                 <span className="text-sm font-bold text-neutral-800">Lote {lote.codigo}</span>
@@ -116,6 +220,14 @@ export default function ListadoLotesPage() {
                     ? `${formatearNumero(lote.gmd_objetivo, 2)} kg/día`
                     : "Sin objetivo"}
                 </Cell>
+                <Button
+                  variant="ghost"
+                  icon={Pencil}
+                  aria-label={`Editar lote ${lote.codigo}`}
+                  onClick={() => setEdicion({ id: lote.id, formulario: formularioDeLote(lote), error: null })}
+                >
+                  Editar
+                </Button>
               </TableRow>
             );
           })}
