@@ -28,7 +28,7 @@ contexto del animal (raza), fondo crema, tarjetas blancas, sombras tintadas en v
   `stone-100` o `lime-300` no genera estilo.
 - **Formato argentino:** números, pesos, fechas y porcentajes pasan por
   `src/lib/formato.ts` (`452,5 kg`, `60 %`, `20/10/2026, 14:30`).
-- **Layout:** sidebar fija en desktop con logo y pastilla de fecha, barra inferior en
+- **Layout:** sidebar fija en desktop con logo y pastilla de fecha, colapsable a solo emblema e iconos (la preferencia se recuerda por navegador en `localStorage`), barra inferior en
   mobile — ver `src/components/Layout.tsx`. El emblema `public/logo-mark.png` viene del
   design system.
 
@@ -46,7 +46,7 @@ lugar (por ejemplo, "Alertas activas" en vez de "Estado Sanitario" en el panel).
   tipos del contrato están en `src/api/tipos.ts`.
 - `src/features/<nombre>/` — páginas y componentes propios de cada funcionalidad
   (`captura`, `animales`, `lotes`, `panel`, `alertas`, `auth`, `usuarios`, `roles`).
-- `src/components/` — compartidos entre features: `Layout`, `BackendStatus`, `PageHeader`,
+- `src/components/` — compartidos entre features: `Layout`, `PageHeader`,
   `Button` (+ `buttonStyles` para links), `Badge`, `Card`, `KpiTile`, `StatCard`, `Tabs`,
   `Field` (`Input`, `Select`, `SearchInput`), `Table`, `Feedback` (`Notice`, `Loading`,
   `EmptyState`), `ProgressBar`, `Stepper` y `LineChart` (gráfico SVG propio, sin librería
