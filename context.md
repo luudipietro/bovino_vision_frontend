@@ -107,6 +107,17 @@ muestra el error y se conserva la foto. Volver desde estimando corta la consulta
 estimación sigue en el servidor y su resultado se ve en la galería de la sesión; volver desde
 el resultado no toca el pesaje, que es inmutable.
 
+**Resultado completo:** además del peso, el resultado lista fecha y hora, raza, sexo y edad
+del animal (los datos que el pesaje no trae salen del animal elegido en la captura) y el peso
+anterior con su fecha, también cuando hay alerta; sin peso anterior avisa que es el primer
+pesaje. La lógica pura está en `resumenDePesaje.ts` y `formatearEdad` (`lib/formato.ts`).
+
+**Pesar desde la ficha:** "Pesar este animal" navega a `/captura?animal=<id>`
+(`rutaDeCaptura.ts`); `useCaptura` lee ese parámetro, carga el animal con
+`GET /animales/{id}` y salta a la foto. Si el animal no se puede abrir, muestra el error y deja
+identificarlo a mano. En el listado, el filtro "con alertas activas" y los mensajes de lista
+vacía (con filtros: quitarlos; sin animales: darlos de alta) salen de `listadoVacio.ts`.
+
 ## Sesión y permisos
 
 - La sesión vive en una cookie `HttpOnly` que maneja el backend; el front no guarda ningún

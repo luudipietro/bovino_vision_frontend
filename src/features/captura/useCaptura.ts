@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { obtenerAnimal } from "../../api/animales";
 import {
   confirmarCaptura,
   descartarCaptura,
@@ -12,6 +14,7 @@ import type { Animal, Captura, Uuid } from "../../api/tipos";
 import { esperarResultado, type ResultadoCaptura } from "./esperarResultado";
 import { type PasoCaptura, retrocesoDesde } from "./navegacion";
 import { reducirFoto } from "./reducirFoto";
+import { idAnimalDeConsulta } from "./rutaDeCaptura";
 
 const INTERVALO_CONSULTA_MS = 1000;
 
@@ -36,6 +39,32 @@ export function useCaptura() {
   // Polling stops when the page unmounts or the operator moves on.
   const consultaVigente = useRef(0);
   const urlsCreadas = useRef<string[]>([]);
+
+  // "Pesar este animal" links here with `?animal=<id>`: that animal starts already identified.
+  const [parametros] = useSearchParams();
+  const idAnimalPedido = idAnimalDeConsulta(parametros);
+  const [idAnimalResuelto, setIdAnimalResuelto] = useState<Uuid | null>(null);
+  const abriendoAnimal = idAnimalPedido !== null && idAnimalResuelto !== idAnimalPedido;
+
+  useEffect(() => {
+    if (!idAnimalPedido) return;
+    let vigente = true;
+    obtenerAnimal(idAnimalPedido)
+      .then((encontrado) => {
+        if (!vigente) return;
+        seleccionarAnimal(encontrado);
+        setIdAnimalResuelto(idAnimalPedido);
+      })
+      .catch((err: unknown) => {
+        if (!vigente) return;
+        // Identifying the animal by hand is still possible.
+        setError(`No pudimos abrir el animal elegido. ${mensajeDeError(err)}`);
+        setIdAnimalResuelto(idAnimalPedido);
+      });
+    return () => {
+      vigente = false;
+    };
+  }, [idAnimalPedido]);
 
   useEffect(() => {
     const consultas = consultaVigente;
@@ -209,6 +238,7 @@ export function useCaptura() {
     versionGaleria,
     paso,
     animal,
+    abriendoAnimal,
     captura,
     resultado,
     cargando,

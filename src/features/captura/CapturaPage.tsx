@@ -42,6 +42,7 @@ export default function CapturaPage() {
     contenido = (
       <ResultadoPesaje
         resultado={captura.resultado}
+        animal={captura.animal}
         cargando={captura.cargando}
         error={captura.error}
         onConfirmar={captura.confirmarResultado}
@@ -50,7 +51,18 @@ export default function CapturaPage() {
     );
   } else if (!captura.animal || captura.paso === "identificar") {
     paso = 1;
-    contenido = <IdentificarAnimal onSeleccionar={captura.seleccionarAnimal} />;
+    contenido = captura.abriendoAnimal ? (
+      <Loading>Abriendo el animal…</Loading>
+    ) : (
+      <>
+        <IdentificarAnimal onSeleccionar={captura.seleccionarAnimal} />
+        {captura.error && (
+          <Notice tone="danger" className="mt-4">
+            {captura.error}
+          </Notice>
+        )}
+      </>
+    );
   } else if (captura.paso === "procesando") {
     paso = 3;
     contenido = (

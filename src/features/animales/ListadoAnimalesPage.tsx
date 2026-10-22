@@ -15,6 +15,7 @@ import { formatearKg, formatearNumero } from "../../lib/formato";
 import { usePuede } from "../auth/useSesion";
 import CamposAnimal from "./CamposAnimal";
 import { FORMULARIO_VACIO, type FormularioAnimal, nuevoAnimalDesde } from "./formularioAnimal";
+import { motivoDeListadoVacio } from "./listadoVacio";
 import { useCatalogos } from "./useCatalogos";
 
 const COLUMNAS = "md:grid-cols-[1.4fr_1fr_0.8fr_0.9fr_1.2fr_auto]";
@@ -23,6 +24,7 @@ export default function ListadoAnimalesPage() {
   const puedeGestionar = usePuede("rodeo_gestionar");
   const [busqueda, setBusqueda] = useState("");
   const [idLote, setIdLote] = useState<Uuid | null>(null);
+  const [soloConAlertas, setSoloConAlertas] = useState(false);
   const [animales, setAnimales] = useState<Animal[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,14 +38,18 @@ export default function ListadoAnimalesPage() {
     // A newer search or filter makes this response stale.
     let vigente = true;
     setCargando(true);
-    listarAnimales({ q: busqueda, idLote })
-      .then((encontrados) => vigente && setAnimales(encontrados))
+    listarAnimales({ q: busqueda, idLote, conAlertasActivas: soloConAlertas })
+      .then((encontrados) => {
+        if (!vigente) return;
+        setAnimales(encontrados);
+        setError(null);
+      })
       .catch((err: unknown) => vigente && setError(mensajeDeError(err)))
       .finally(() => vigente && setCargando(false));
     return () => {
       vigente = false;
     };
-  }, [busqueda, idLote]);
+  }, [busqueda, idLote, soloConAlertas]);
 
   function abrirAlta() {
     // A new animal starts in the lot being viewed, if any.
@@ -67,6 +73,13 @@ export default function ListadoAnimalesPage() {
   }
 
   const cabezas = animales.length;
+  const filtros = { busqueda, idLote, conAlertasActivas: soloConAlertas };
+
+  function quitarFiltros() {
+    setBusqueda("");
+    setIdLote(null);
+    setSoloConAlertas(false);
+  }
 
   return (
     <section className="space-y-6">
@@ -95,6 +108,15 @@ export default function ListadoAnimalesPage() {
               Lote {lote.codigo}
             </option>
           ))}
+        </Select>
+        <Select
+          aria-label="Filtrar por alertas"
+          value={soloConAlertas ? "con_alertas" : ""}
+          onChange={(e) => setSoloConAlertas(e.target.value === "con_alertas")}
+          className="md:w-56"
+        >
+          <option value="">Todas las alertas</option>
+          <option value="con_alertas">Con alertas activas</option>
         </Select>
         {puedeGestionar && (
           <Button
@@ -130,10 +152,36 @@ export default function ListadoAnimalesPage() {
 
       {error && <Notice tone="danger">{error}</Notice>}
       {cargando && <Loading />}
-      {!cargando && animales.length === 0 && (
-        <EmptyState icon={PawPrint} title="No hay animales para mostrar">
-          Probá con otra búsqueda o dá de alta un animal nuevo.
-        </EmptyState>
+      {!cargando && !error && animales.length === 0 && (
+        motivoDeListadoVacio(filtros) === "con_filtros" ? (
+          <EmptyState
+            icon={PawPrint}
+            title="Ningún animal coincide con los filtros"
+            action={
+              <Button variant="secondary" icon={X} onClick={quitarFiltros}>
+                Quitar filtros
+              </Button>
+            }
+          >
+            Probá con otra búsqueda o quitá los filtros para ver todo el rodeo.
+          </EmptyState>
+        ) : (
+          <EmptyState
+            icon={PawPrint}
+            title="Todavía no hay animales cargados"
+            action={
+              puedeGestionar && (
+                <Button icon={Plus} onClick={abrirAlta}>
+                  Dar de alta un animal
+                </Button>
+              )
+            }
+          >
+            {puedeGestionar
+              ? "Dá de alta el primero para empezar a registrar sus pesajes."
+              : "Cuando se den de alta animales, van a aparecer acá."}
+          </EmptyState>
+        )
       )}
 
       {animales.length > 0 && (

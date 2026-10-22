@@ -10,6 +10,11 @@ export interface FormularioAnimal {
 
 export const FORMULARIO_VACIO: FormularioAnimal = { idRaza: "", sexo: "", fechaNacimiento: "", idLote: "" };
 
+/** "Macho" / "Hembra". */
+export function etiquetaDeSexo(sexo: Sexo): string {
+  return sexo === "macho" ? "Macho" : "Hembra";
+}
+
 export function formularioDesde(animal: Animal): FormularioAnimal {
   return {
     idRaza: animal.id_raza ?? "",

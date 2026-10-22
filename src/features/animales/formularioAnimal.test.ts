@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { Animal } from "../../api/tipos";
-import { cambiosDeAnimal, formularioDesde, FORMULARIO_VACIO, nuevoAnimalDesde } from "./formularioAnimal";
+import {
+  cambiosDeAnimal,
+  etiquetaDeSexo,
+  formularioDesde,
+  FORMULARIO_VACIO,
+  nuevoAnimalDesde,
+} from "./formularioAnimal";
 
 const animal: Animal = {
   id: "a1",
@@ -62,5 +68,12 @@ describe("cambiosDeAnimal", () => {
     const formulario = { ...formularioDesde(sinDatos), sexo: "macho" as const, fechaNacimiento: "2025-01-01" };
 
     expect(cambiosDeAnimal(sinDatos, formulario)).toEqual({ sexo: "macho", fecha_nacimiento: "2025-01-01" });
+  });
+});
+
+describe("etiquetaDeSexo", () => {
+  it("names both sexes in Spanish", () => {
+    expect(etiquetaDeSexo("macho")).toBe("Macho");
+    expect(etiquetaDeSexo("hembra")).toBe("Hembra");
   });
 });

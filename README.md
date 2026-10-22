@@ -78,5 +78,11 @@ el navegador contra la API local.
   el pesaje (`GET /pesajes/{id}`) y en cada captura de la sesión; el historial de pesajes trae
   `id_imagen_utilizada`. `FotoCaptura` las muestra en el resultado, en el historial de la
   ficha y en la galería de la sesión, con un reemplazo neutro si la imagen no carga.
+- "Pesar este animal" (en la ficha y, si no tiene pesajes, en su historial; solo con el permiso
+  `capturas_registrar`) abre `/captura?animal=<id>`: la captura carga el animal con
+  `GET /animales/{id}` y arranca ya identificado. El listado de animales filtra "con alertas
+  activas" con `con_alertas_activas=true`.
+- El resultado del pesaje muestra fecha y hora, raza, sexo y edad (del animal elegido) y el
+  peso anterior con su fecha, o el aviso de primer pesaje cuando `ultimo_peso_previo` es null.
 - Las alertas son `perdida_peso` o `estancamiento`, con la GMD del intervalo en `variacion`
   (kg/día) y prioridad numérica (1 es la más urgente).

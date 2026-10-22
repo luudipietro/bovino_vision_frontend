@@ -58,3 +58,24 @@ export function formatearHace(valor: string, ahora: Date = new Date()): string {
   const dias = Math.floor(horas / 24);
   return dias === 1 ? "Ayer" : `Hace ${dias} días`;
 }
+
+function unidades(cantidad: number, singular: string, plural: string): string {
+  return `${cantidad} ${cantidad === 1 ? singular : plural}`;
+}
+
+/**
+ * Age of an animal from its birth date, counted in whole calendar months relative to `hoy`:
+ * "Menos de 1 mes", "8 meses", "1 año", "2 años y 3 meses". Null when the date is in the future.
+ */
+export function formatearEdad(fechaNacimiento: string, hoy: Date = new Date()): string | null {
+  const nacimiento = aFecha(fechaNacimiento);
+  const diaSinCumplir = hoy.getDate() < nacimiento.getDate() ? 1 : 0;
+  const meses =
+    (hoy.getFullYear() - nacimiento.getFullYear()) * 12 + hoy.getMonth() - nacimiento.getMonth() - diaSinCumplir;
+  if (meses < 0) return null;
+  if (meses < 1) return "Menos de 1 mes";
+  if (meses < 12) return unidades(meses, "mes", "meses");
+  const anios = unidades(Math.floor(meses / 12), "año", "años");
+  const mesesSueltos = meses % 12;
+  return mesesSueltos === 0 ? anios : `${anios} y ${unidades(mesesSueltos, "mes", "meses")}`;
+}

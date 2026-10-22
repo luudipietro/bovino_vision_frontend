@@ -16,12 +16,19 @@ import { formatearFecha, formatearFechaCorta, formatearKg, formatearNumero } fro
 import { describirAlerta, formatearGmd, nivelDePrioridad } from "../alertas/textos";
 import { usePuede } from "../auth/useSesion";
 import CamposAnimal from "./CamposAnimal";
-import { cambiosDeAnimal, type FormularioAnimal, formularioDesde } from "./formularioAnimal";
+import {
+  cambiosDeAnimal,
+  etiquetaDeSexo,
+  type FormularioAnimal,
+  formularioDesde,
+} from "./formularioAnimal";
 import LineaDePesajes from "./LineaDePesajes";
+import PesarAnimal from "./PesarAnimal";
 import { useCatalogos } from "./useCatalogos";
 
 export default function FichaAnimalPage() {
   const puedeGestionar = usePuede("rodeo_gestionar");
+  const puedePesar = usePuede("capturas_registrar");
   const { id = "" } = useParams();
   const [animal, setAnimal] = useState<Animal | null>(null);
   const [pesajes, setPesajes] = useState<PesajeHistorial[]>([]);
@@ -96,10 +103,13 @@ export default function FichaAnimalPage() {
   const delta =
     ultimoPesaje && pesajeAnterior ? ultimoPesaje.peso_kg - pesajeAnterior.peso_kg : null;
 
+  // The API also returns resolved alerts; only the active ones are shown as such.
+  const alertasActivas = alertas.filter((alerta) => alerta.estado === "activa");
+
   const cronologico = [...pesajes].reverse();
   const metadatos = [
     animal.raza ?? "Raza sin registrar",
-    animal.sexo ? (animal.sexo === "macho" ? "Macho" : "Hembra") : null,
+    animal.sexo ? etiquetaDeSexo(animal.sexo) : null,
     animal.lote_codigo ? `Lote ${animal.lote_codigo}` : "Sin lote asignado",
     animal.fecha_nacimiento ? `Nació el ${formatearFecha(animal.fecha_nacimiento)}` : null,
   ].filter((dato): dato is string => dato !== null);
@@ -111,17 +121,22 @@ export default function FichaAnimalPage() {
         title={animal.identificador}
         subtitle={metadatos.join(" · ")}
         actions={
-          puedeGestionar && !edicion && (
-            <Button
-              variant="secondary"
-              icon={Pencil}
-              onClick={() => {
-                setErrorEdicion(null);
-                setEdicion(formularioDesde(animal));
-              }}
-            >
-              Editar datos
-            </Button>
+          (puedePesar || (puedeGestionar && !edicion)) && (
+            <>
+              {puedePesar && <PesarAnimal idAnimal={animal.id} />}
+              {puedeGestionar && !edicion && (
+                <Button
+                  variant="secondary"
+                  icon={Pencil}
+                  onClick={() => {
+                    setErrorEdicion(null);
+                    setEdicion(formularioDesde(animal));
+                  }}
+                >
+                  Editar datos
+                </Button>
+              )}
+            </>
           )
         }
       />
@@ -173,9 +188,9 @@ export default function FichaAnimalPage() {
         <KpiTile label="Pesajes" value={formatearNumero(pesajes.length)} />
       </div>
 
-      {alertas.length > 0 && (
+      {alertasActivas.length > 0 ? (
         <div className="space-y-2">
-          {alertas.map((alerta) => {
+          {alertasActivas.map((alerta) => {
             const nivel = nivelDePrioridad(alerta.prioridad);
             return (
               <Notice key={alerta.id} tone={nivel === "alta" ? "danger" : "warning"}>
@@ -185,6 +200,8 @@ export default function FichaAnimalPage() {
             );
           })}
         </div>
+      ) : (
+        <Notice tone="success">Este animal no tiene alertas activas.</Notice>
       )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -205,7 +222,11 @@ export default function FichaAnimalPage() {
           <CardHeader title="Registro cronológico de pesajes" subtitle="Del más reciente al más antiguo" />
           <div className="mt-5">
             {pesajes.length === 0 ? (
-              <EmptyState icon={Scale} title="Todavía no tiene pesajes registrados" />
+              <EmptyState
+                icon={Scale}
+                title="Todavía no tiene pesajes registrados"
+                action={puedePesar && <PesarAnimal idAnimal={animal.id} />}
+              />
             ) : (
               <LineaDePesajes pesajes={pesajes} />
             )}

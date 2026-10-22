@@ -1,14 +1,18 @@
 import { ArrowDown, ArrowUp, CircleCheck } from "lucide-react";
+import type { Animal } from "../../../api/tipos";
 import Badge from "../../../components/Badge";
 import Button from "../../../components/Button";
 import { Notice } from "../../../components/Feedback";
 import FotoCaptura from "../../../components/FotoCaptura";
 import { formatearNumero } from "../../../lib/formato";
 import { describirAlerta } from "../../alertas/textos";
+import { resumirPesaje } from "../resumenDePesaje";
 import type { ResultadoCaptura } from "../useCaptura";
 
 interface ResultadoPesajeProps {
   resultado: ResultadoCaptura;
+  /** The weighed animal, for the breed, sex and age that the weighing itself does not carry. */
+  animal: Animal | null;
   cargando: boolean;
   error: string | null;
   onConfirmar: () => void;
@@ -17,6 +21,7 @@ interface ResultadoPesajeProps {
 
 export default function ResultadoPesaje({
   resultado,
+  animal,
   cargando,
   error,
   onConfirmar,
@@ -27,6 +32,7 @@ export default function ResultadoPesaje({
       {resultado.tipo === "estimado" ? (
         <PesoEstimado
           resultado={resultado}
+          animal={animal}
           cargando={cargando}
           error={error}
           onConfirmar={onConfirmar}
@@ -48,6 +54,7 @@ export default function ResultadoPesaje({
 
 function PesoEstimado({
   resultado,
+  animal,
   cargando,
   error,
   onConfirmar,
@@ -59,6 +66,7 @@ function PesoEstimado({
     ? pesaje.peso_kg - pesaje.ultimo_peso_previo.peso_kg
     : null;
   const decimales = Number.isInteger(pesaje.peso_kg) ? 0 : 1;
+  const { detalles, primerPesaje } = resumirPesaje(pesaje, animal);
 
   return (
     <>
@@ -95,6 +103,21 @@ function PesoEstimado({
           </Badge>
         )}
       </div>
+
+      <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 rounded-[12px] border border-neutral-200 px-4 py-3 sm:grid-cols-3">
+        {detalles.map(({ etiqueta, valor }) => (
+          <div key={etiqueta} className="min-w-0">
+            <dt className="text-[11px] font-medium uppercase text-neutral-400">{etiqueta}</dt>
+            <dd className="mt-0.5 text-sm font-semibold text-neutral-800">{valor}</dd>
+          </div>
+        ))}
+      </dl>
+
+      {primerPesaje && (
+        <Notice className="mt-4">
+          Es el primer pesaje de este animal: todavía no hay un peso anterior para comparar.
+        </Notice>
+      )}
 
       {pesaje.alerta && (
         <Notice tone="danger" className="mt-4">

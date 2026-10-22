@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatearEdad,
   formatearFecha,
   formatearFechaCorta,
   formatearFechaHora,
@@ -40,5 +41,35 @@ describe("formato", () => {
     expect(formatearHace("2026-10-20T09:00:00", ahora)).toBe("Hace 3 h");
     expect(formatearHace("2026-10-19T10:00:00", ahora)).toBe("Ayer");
     expect(formatearHace("2026-10-16T12:00:00", ahora)).toBe("Hace 4 días");
+  });
+
+  describe("formatearEdad", () => {
+    const hoy = new Date("2026-10-21T12:00:00");
+
+    it("counts whole calendar months and speaks in years once past a year", () => {
+      expect(formatearEdad("2024-07-10", hoy)).toBe("2 años y 3 meses");
+      expect(formatearEdad("2025-04-21", hoy)).toBe("1 año y 6 meses");
+      expect(formatearEdad("2025-10-21", hoy)).toBe("1 año");
+      expect(formatearEdad("2023-10-21", hoy)).toBe("3 años");
+    });
+
+    it("speaks in months below a year, singular for one", () => {
+      expect(formatearEdad("2026-02-21", hoy)).toBe("8 meses");
+      expect(formatearEdad("2026-09-21", hoy)).toBe("1 mes");
+    });
+
+    it("does not count a month until its day has come", () => {
+      expect(formatearEdad("2025-10-22", hoy)).toBe("11 meses");
+      expect(formatearEdad("2026-09-22", hoy)).toBe("Menos de 1 mes");
+    });
+
+    it("says less than a month for a newborn", () => {
+      expect(formatearEdad("2026-10-05", hoy)).toBe("Menos de 1 mes");
+      expect(formatearEdad("2026-10-21", hoy)).toBe("Menos de 1 mes");
+    });
+
+    it("has no age for a birth date in the future", () => {
+      expect(formatearEdad("2026-10-22", hoy)).toBeNull();
+    });
   });
 });
