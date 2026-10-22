@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp, CircleCheck } from "lucide-react";
 import Badge from "../../../components/Badge";
 import Button from "../../../components/Button";
 import { Notice } from "../../../components/Feedback";
+import FotoCaptura from "../../../components/FotoCaptura";
 import { formatearNumero } from "../../../lib/formato";
 import { describirAlerta } from "../../alertas/textos";
 import type { ResultadoCaptura } from "../useCaptura";
@@ -64,6 +65,14 @@ function PesoEstimado({
       <p className="text-sm text-neutral-500">
         Caravana <span className="font-bold text-neutral-800">{pesaje.animal_identificador}</span>
       </p>
+
+      <div className="mt-4 aspect-[4/3] w-full overflow-hidden rounded-[14px] bg-green-900">
+        <FotoCaptura
+          idImagen={pesaje.id_imagen}
+          alt={`Foto de ${pesaje.animal_identificador}`}
+          iconoGrande
+        />
+      </div>
 
       <div className="mt-4 rounded-[14px] bg-green-50 px-6 py-8 text-center">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-green-600">

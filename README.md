@@ -73,5 +73,10 @@ el navegador contra la API local.
   al 85 %, con la orientación EXIF ya aplicada. Una foto JPEG que ya entra en el límite se sube
   tal cual, y si el navegador no puede decodificarla se sube la original. Los dos valores son
   constantes de `features/captura/tamanoFoto.ts`.
+- Las fotos se sirven con `GET /imagenes/{id}` (`urlDeImagen` en `src/api/imagenes.ts`), que se
+  usa directo como `src` de un `<img>` y viaja con la cookie de sesión. El `id_imagen` llega en
+  el pesaje (`GET /pesajes/{id}`) y en cada captura de la sesión; el historial de pesajes trae
+  `id_imagen_utilizada`. `FotoCaptura` las muestra en el resultado, en el historial de la
+  ficha y en la galería de la sesión, con un reemplazo neutro si la imagen no carga.
 - Las alertas son `perdida_peso` o `estancamiento`, con la GMD del intervalo en `variacion`
   (kg/día) y prioridad numérica (1 es la más urgente).

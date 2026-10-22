@@ -27,7 +27,8 @@ export function useCaptura() {
   const [resultado, setResultado] = useState<ResultadoCaptura | null>(null);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // The API does not serve images: the session gallery shows the photos taken in this tab.
+  // Object URLs of the photos taken in this tab: the gallery shows them while it has them and
+  // falls back to the API image (after a reload, or for photos from another device).
   const [vistasPrevias, setVistasPrevias] = useState<Record<Uuid, string>>({});
   const [quitandoFoto, setQuitandoFoto] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);

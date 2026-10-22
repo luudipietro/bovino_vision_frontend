@@ -100,6 +100,8 @@ export interface CapturaDeSesion {
   estado: EstadoCaptura;
   motivo_fallo: string | null;
   id_evento_pesaje: Uuid | null;
+  /** Photo of the capture, served by `GET /imagenes/{id}`. */
+  id_imagen: Uuid;
 }
 
 export type TipoAlerta = "perdida_peso" | "estancamiento";
@@ -145,6 +147,8 @@ export interface Pesaje {
   peso_kg: number;
   fecha_pesaje: FechaHora;
   version_modelo: string;
+  /** Photo the estimation used, served by `GET /imagenes/{id}`. */
+  id_imagen: Uuid;
   animal_identificador: string;
   lote_codigo: string | null;
   ultimo_peso_previo: PesoPrevio | null;

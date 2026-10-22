@@ -1,5 +1,10 @@
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
+/** Absolute URL of an API path, for resources the browser loads by itself (for example `<img src>`). */
+export function urlDeApi(path: string): string {
+  return `${API_URL}${path}`;
+}
+
 export class ApiError extends Error {
   readonly status: number;
 

@@ -49,15 +49,16 @@ lugar (por ejemplo, "Alertas activas" en vez de "Estado Sanitario" en el panel).
 - `src/components/` — compartidos entre features: `Layout`, `PageHeader`,
   `Button` (+ `buttonStyles` para links), `Badge`, `Card`, `KpiTile`, `StatCard`, `Tabs`,
   `Field` (`Input`, `Select`, `SearchInput`), `Table`, `Feedback` (`Notice`, `Loading`,
-  `EmptyState`), `ProgressBar`, `Stepper` y `LineChart` (gráfico SVG propio, sin librería
+  `EmptyState`), `FotoCaptura` (foto de la API con reemplazo si no carga), `ProgressBar`, `Stepper` y `LineChart` (gráfico SVG propio, sin librería
   de charts, con hover y navegación por teclado).
 - `src/lib/formato.ts` — formato argentino de números y fechas.
 
 ## Simplificaciones deliberadas (y por qué)
 
-- **Sin fotos reales de animales:** el rodeo se muestra como tabla, sin miniatura, en vez de la
-  foto que muestra el mockup, porque el modelo de datos no guarda "la" foto de un animal
-  (guarda fotos de captura por evento de pesaje, no una foto de perfil fija).
+- **Sin foto de perfil del animal:** el rodeo se muestra como tabla, sin miniatura, en vez de
+  la foto que muestra el mockup, porque el modelo de datos no guarda "la" foto de un animal
+  (guarda fotos de captura por evento de pesaje, no una foto de perfil fija). Las fotos de
+  captura sí se ven, atadas a cada pesaje.
 - **Sin QR / escaneo de caravana:** el mockup lo insinúa pero no es una funcionalidad
   implementada ni planeada en el alcance actual; se prefirió no agregar un botón
   decorativo que no hiciera nada.
@@ -81,8 +82,11 @@ lugar (por ejemplo, "Alertas activas" en vez de "Estado Sanitario" en el panel).
 - **Panel:** el selector de lote filtra el panel y el reporte. La API de alertas no filtra
   por lote: con un lote elegido se suman las `alertas_activas` de sus animales actuales.
 - **Fotos de la sesión:** la pantalla de captura lista las capturas de la sesión con su
-  estado. La API no sirve imágenes, así que la miniatura solo aparece para las fotos tomadas
-  en esa pestaña.
+  estado. La miniatura sale de la vista previa local mientras exista (fotos tomadas en esa
+  pestaña) y, si no, de `GET /imagenes/{id}` por `id_imagen`, así que también se ve al
+  recargar. Esa misma foto se muestra en el resultado del pesaje y, como miniatura, en el
+  historial de pesajes de la ficha. Si la imagen no carga, `FotoCaptura` muestra un reemplazo
+  neutro.
 
 ## Pesaje asíncrono
 

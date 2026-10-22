@@ -1,4 +1,3 @@
-import { Camera } from "lucide-react";
 import { useEffect, useState } from "react";
 import { listarCapturasDeSesion } from "../../../api/capturas";
 import { mensajeDeError } from "../../../api/client";
@@ -6,6 +5,7 @@ import type { CapturaDeSesion, Uuid } from "../../../api/tipos";
 import Badge from "../../../components/Badge";
 import Card, { CardHeader } from "../../../components/Card";
 import { Notice } from "../../../components/Feedback";
+import FotoCaptura from "../../../components/FotoCaptura";
 import { formatearFechaHora } from "../../../lib/formato";
 import { estadoDeCaptura } from "../estadoCaptura";
 
@@ -13,7 +13,7 @@ interface GaleriaSesionProps {
   idSesion: Uuid;
   /** Changes whenever a capture is added or finishes, to reload the list. */
   version: number;
-  /** Local previews by capture id; photos from another tab have none. */
+  /** Local previews by capture id (photos taken in this tab); the rest use the API thumbnail. */
   vistasPrevias: Record<Uuid, string>;
 }
 
@@ -66,7 +66,11 @@ export default function GaleriaSesion({ idSesion, version, vistasPrevias }: Gale
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <Camera aria-hidden="true" className="h-8 w-8 text-green-300" />
+                  <FotoCaptura
+                    idImagen={captura.id_imagen}
+                    alt={`Foto de ${captura.animal_identificador}`}
+                    iconoGrande
+                  />
                 )}
               </div>
               <div className="space-y-1 px-3 py-2">
