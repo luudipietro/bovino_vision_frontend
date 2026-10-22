@@ -93,21 +93,22 @@ export default function Layout() {
           colapsada ? "w-[88px] px-4" : "w-[264px] px-7"
         }`}
       >
-        <div className={`flex items-center ${colapsada ? "flex-col gap-4" : "justify-between"}`}>
+        <div className={`flex items-center ${colapsada ? "justify-center" : ""}`}>
           <Logo markOnly={colapsada} />
-          <button
-            type="button"
-            onClick={alternarSidebar}
-            aria-label={colapsada ? "Expandir menú" : "Colapsar menú"}
-            aria-expanded={!colapsada}
-            title={colapsada ? "Expandir menú" : "Colapsar menú"}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-green-50 hover:text-neutral-800"
-          >
-            <ToggleIcon className="h-5 w-5" />
-          </button>
         </div>
+        {/* Sits on the sidebar border so it never crowds the wordmark. */}
+        <button
+          type="button"
+          onClick={alternarSidebar}
+          aria-label={colapsada ? "Expandir menú" : "Colapsar menú"}
+          aria-expanded={!colapsada}
+          title={colapsada ? "Expandir menú" : "Colapsar menú"}
+          className="absolute -right-3.5 top-[50px] z-30 flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-500 shadow-sm transition-colors hover:bg-green-50 hover:text-neutral-800"
+        >
+          <ToggleIcon className="h-4 w-4" />
+        </button>
 
-        <nav className={`flex flex-1 flex-col gap-2 ${colapsada ? "mt-8" : "mt-14"}`} aria-label="Principal">
+        <nav className="mt-14 flex flex-1 flex-col gap-2" aria-label="Principal">
           {navItems.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
@@ -166,9 +167,7 @@ export default function Layout() {
         </div>
 
         <main className="flex-1 px-4 pb-28 pt-6 md:px-6 md:pb-12 md:pt-4 lg:px-8">
-          <div className="mx-auto max-w-[1326px]">
-            <Outlet />
-          </div>
+          <Outlet />
         </main>
 
         <nav
