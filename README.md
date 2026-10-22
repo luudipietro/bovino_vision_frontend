@@ -68,5 +68,10 @@ el navegador contra la API local.
   `POST /capturas/{id}/confirmar`. En el paso de la foto, "Quitar foto" (o volver al paso
   anterior con la foto ya cargada) llama a `DELETE /capturas/{id}`, que solo acepta capturas
   `registrada`.
+- Antes del `POST /capturas`, la foto se achica en el navegador (`reducirFoto`, con
+  `createImageBitmap` y un canvas, sin dependencias): lado mayor de 1600 px como máximo y JPEG
+  al 85 %, con la orientación EXIF ya aplicada. Una foto JPEG que ya entra en el límite se sube
+  tal cual, y si el navegador no puede decodificarla se sube la original. Los dos valores son
+  constantes de `features/captura/tamanoFoto.ts`.
 - Las alertas son `perdida_peso` o `estancamiento`, con la GMD del intervalo en `variacion`
   (kg/día) y prioridad numérica (1 es la más urgente).

@@ -11,6 +11,7 @@ import { obtenerPesaje, solicitarPesaje } from "../../api/pesajes";
 import type { Animal, Captura, Uuid } from "../../api/tipos";
 import { esperarResultado, type ResultadoCaptura } from "./esperarResultado";
 import { type PasoCaptura, retrocesoDesde } from "./navegacion";
+import { reducirFoto } from "./reducirFoto";
 
 const INTERVALO_CONSULTA_MS = 1000;
 
@@ -62,7 +63,9 @@ export function useCaptura() {
     setError(null);
     setAviso(null);
     try {
-      const nueva = await subirCaptura({ idSesion, idAnimal: animal.id, archivo });
+      // The photo is shrunk right before the upload; the local preview keeps the original.
+      const reducida = await reducirFoto(archivo);
+      const nueva = await subirCaptura({ idSesion, idAnimal: animal.id, archivo: reducida });
       const url = URL.createObjectURL(archivo);
       urlsCreadas.current.push(url);
       setCaptura(nueva);
