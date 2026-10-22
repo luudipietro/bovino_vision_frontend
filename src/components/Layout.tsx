@@ -2,12 +2,11 @@ import {
   Bell,
   Camera,
   ChartNoAxesColumn,
-  ChevronLeft,
-  ChevronRight,
   CircleUserRound,
   KeyRound,
   LayoutGrid,
   LogOut,
+  PanelLeft,
   PawPrint,
   type LucideIcon,
   Users,
@@ -84,28 +83,29 @@ export default function Layout() {
     ...seccion,
     icon: ICONOS[seccion.to],
   }));
-  const ToggleIcon = colapsada ? ChevronRight : ChevronLeft;
 
   return (
     <div className="flex min-h-screen">
       <aside
-        className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r border-neutral-200 bg-white py-10 transition-[width,padding] duration-200 ease-standard md:flex ${
-          colapsada ? "w-[88px] px-4" : "w-[264px] px-7"
+        className={`sticky top-0 hidden h-screen shrink-0 flex-col border-r border-neutral-200 bg-white pb-10 transition-[width,padding] duration-200 ease-standard md:flex ${
+          colapsada ? "w-[88px] px-4 pt-14" : "w-[264px] px-7 pt-10"
         }`}
       >
         <div className={`flex items-center ${colapsada ? "justify-center" : ""}`}>
           <Logo markOnly={colapsada} />
         </div>
-        {/* Sits on the sidebar border so it never crowds the wordmark. */}
+        {/* Top-right corner of the sidebar, above the logo row so it never crowds the wordmark. */}
         <button
           type="button"
           onClick={alternarSidebar}
           aria-label={colapsada ? "Expandir menú" : "Colapsar menú"}
           aria-expanded={!colapsada}
           title={colapsada ? "Expandir menú" : "Colapsar menú"}
-          className="absolute -right-3.5 top-[50px] z-30 flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-500 shadow-sm transition-colors hover:bg-green-50 hover:text-neutral-800"
+          className={`absolute top-3 flex h-8 w-8 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-green-50 hover:text-neutral-800 ${
+            colapsada ? "left-1/2 -translate-x-1/2" : "right-4"
+          }`}
         >
-          <ToggleIcon className="h-4 w-4" />
+          <PanelLeft className="h-5 w-5" />
         </button>
 
         <nav className="mt-14 flex flex-1 flex-col gap-2" aria-label="Principal">
@@ -162,11 +162,11 @@ export default function Layout() {
             <LogOut className="h-5 w-5" />
           </button>
         </header>
-        <div className="hidden justify-end px-6 pt-10 md:flex lg:px-8">
+        <div className="hidden justify-end px-8 pt-10 md:flex lg:px-12">
           <DateTimePill />
         </div>
 
-        <main className="flex-1 px-4 pb-28 pt-6 md:px-6 md:pb-12 md:pt-4 lg:px-8">
+        <main className="flex-1 px-4 pb-28 pt-6 md:px-8 md:pb-12 md:pt-4 lg:px-12">
           <Outlet />
         </main>
 
