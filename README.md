@@ -29,6 +29,23 @@ npm run dev
 Por defecto espera el backend en `http://localhost:8000` (ver `.env.example` →
 `VITE_API_URL`).
 
+### Probarlo desde otra PC (túnel)
+
+La cookie de sesión es `Secure` y `SameSite=Strict`, así que el front y la API tienen que
+quedar en el mismo dominio y por HTTPS. El servidor de desarrollo reenvía `/api/*` a
+`http://localhost:8000` (`vite.config.ts`), y alcanza con un solo túnel al front:
+
+```powershell
+# backend corriendo en :8000, después:
+$env:VITE_API_URL="/api"; npm run dev
+# en otra terminal:
+cloudflared tunnel --url http://localhost:5173
+```
+
+`cloudflared` imprime una URL `https://….trycloudflare.com` que se abre desde cualquier PC o
+celular. Es pública mientras el túnel esté abierto (solo la protege el login) y cambia cada
+vez; se cierra con Ctrl+C.
+
 ## Verificación
 
 ```bash
