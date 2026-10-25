@@ -41,13 +41,13 @@ Frontend (F), la lista que se propuso y el usuario aprobó ("hacé las dos cosas
 
 | ID | Specs | Ruta | Estado | Commit |
 |---|---|---|---|---|
-| T1 | contrato de tipos y clientes API (B1–B5 del lado del frontend) | inline (padre) | hecho | (en el commit de T3) |
-| T2 | B1–B5 | delegada, writer backend (paralelo, otro repo) | pendiente | |
-| T3 | F1–F4 | delegada, writer captura (paralelo) | pendiente | |
-| T4 | F5–F8 | delegada, writer rodeo (paralelo) | pendiente | |
-| T5 | F9–F11 | delegada, writer panel y alertas (paralelo) | pendiente | |
-| T6 | F12–F13 | delegada, writer usuarios y roles (paralelo) | pendiente | |
-| T7 | seam check, docs (`README.md`, `context.md`), verificación independiente de B5 (riesgo ítem 2) | inline + verifier | pendiente | |
+| T1 | contrato de tipos y clientes API (B1–B5 del lado del frontend) | inline (padre) | hecho (tsc 0 errores, 106/106 tests) | `1f7dacf` |
+| T2 | B1–B5 | delegada, writer backend (paralelo, otro repo) | hecho (RED/GREEN por B#; suite 284/284; regresión del verificador 19/19) | backend `1eef58f`, `1fcac9a`, `70efb55`, `4046a03` |
+| T3 | F1–F4 | delegada, writer captura (paralelo) | hecho (RED: 4 archivos / 11 tests sin módulo; GREEN 65 tests en captura) | `b38e7e9` |
+| T4 | F5–F8 | delegada, writer rodeo (paralelo) | hecho (RED: `rodeo.test.ts` sin módulo; GREEN 17/17) | `e14ea15` |
+| T5 | F9–F11 | delegada, writer panel y alertas (paralelo) | hecho (RED: `panel.test.ts` y `tarjetas.test.ts` sin módulo; GREEN) | `afae3c8` |
+| T6 | F12–F13 | delegada, writer usuarios y roles (paralelo) | hecho (RED: `listaUsuarios.test.ts` y `agruparPermisos`; GREEN) | `70fd9d8` |
+| T7 | seam check, docs (`README.md`, `context.md`), verificación independiente de B5 (riesgo ítem 2) | inline + verifier | hecho (frontend: tsc 0, 179/179, lint sin warnings nuevos, build OK; verificador: B1–B5 PASS) | frontend `f1b7335` |
 
 Ruta: cinco unidades independientes con superficies disjuntas, cada una de varios archivos o más de 100 líneas, lanzadas juntas (disparador Writer (a)). El padre es dueño de git, de `src/api/*` y de `src/components/*` en el frontend.
 
@@ -57,3 +57,5 @@ Ruta: cinco unidades independientes con superficies disjuntas, cada una de vario
 - L2 (2026-10-24): se respondió con la tabla de cobertura, la lista de cambios solo de frontend y los cambios chicos de backend (sesiones recientes, operario del pesaje, GMD en el listado, último acceso, resolver alerta). Aviso: otra sesión hace commits en `manu` del frontend.
 - L3 (2026-10-24, usuario): "hacé las dos cosas, frontend y cambios chicos del backend, en una rama aparte"
 - L4: se crearon los worktrees desde `manu` (backend `a315ea4`, frontend `07060b3`). Docker no estaba corriendo; se inició Docker Desktop para los tests de integración.
+- L5: decisiones de implementación. `limite` fuera de 1..20 → 422 (`OperacionInvalidaError`, como `/reportes`); no numérico → 400. `ultimo_acceso` sale en todos los lugares que devuelven el DTO de usuario, incluido `GET /auth/sesion` (subconsulta `MAX` indexada por `ix_sesiones_usuario_id_usuario`). El resultado del pesaje no ofrece "Descartar esta medición": el evento de pesaje es inmutable, así que la acción quedó como "Tomar otra foto" (vuelve a la foto del mismo animal). "Sesiones recientes" muestra "Sesión de captura" porque la sesión no tiene lote ni tipo. Los nombres cortos y descripciones de permisos viven en `permisosRol.ts`.
+- L6: verificación. RDD apagado (global), así que no hubo revisión nativa; `gentle-ai review assess` dio `high` por el ítem 2 y corrió un verificador independiente: B1–B5 PASS, 284/284 en una copia limpia, 20 probes (403/404/409/401, aislamiento por usuario y establecimiento, sesiones vencidas o revocadas siguen rechazadas, salidas existentes idénticas a la base salvo los campos nuevos). Las 19 probes quedaron como tests de regresión (`4046a03`). Sin migraciones ni paquetes nuevos.
