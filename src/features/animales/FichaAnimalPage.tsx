@@ -24,6 +24,7 @@ import {
 } from "./formularioAnimal";
 import LineaDePesajes from "./LineaDePesajes";
 import PesarAnimal from "./PesarAnimal";
+import { chipsDeFicha } from "./rodeo";
 import { useCatalogos } from "./useCatalogos";
 
 export default function FichaAnimalPage() {
@@ -108,9 +109,7 @@ export default function FichaAnimalPage() {
 
   const cronologico = [...pesajes].reverse();
   const metadatos = [
-    animal.raza ?? "Raza sin registrar",
     animal.sexo ? etiquetaDeSexo(animal.sexo) : null,
-    animal.lote_codigo ? `Lote ${animal.lote_codigo}` : "Sin lote asignado",
     animal.fecha_nacimiento ? `Nació el ${formatearFecha(animal.fecha_nacimiento)}` : null,
   ].filter((dato): dato is string => dato !== null);
 
@@ -119,7 +118,7 @@ export default function FichaAnimalPage() {
       {volver}
       <PageHeader
         title={animal.identificador}
-        subtitle={metadatos.join(" · ")}
+        subtitle={metadatos.length > 0 ? metadatos.join(" · ") : undefined}
         actions={
           (puedePesar || (puedeGestionar && !edicion)) && (
             <>
@@ -140,6 +139,15 @@ export default function FichaAnimalPage() {
           )
         }
       />
+
+      <ul aria-label="Raza, edad y lote" className="-mt-3 flex flex-wrap gap-2">
+        {chipsDeFicha(animal).map((chip, indice) => (
+          // oxlint-disable-next-line react/no-array-index-key -- the three chips are positional and fixed
+          <li key={indice}>
+            <Badge tone={indice === 0 ? "earth" : "neutral"}>{chip}</Badge>
+          </li>
+        ))}
+      </ul>
 
       {edicion && (
         <Card className="md:p-6">

@@ -1,31 +1,31 @@
-import { Eye, PawPrint, Plus, X } from "lucide-react";
+import { PawPrint, Plus, X } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { crearAnimal, listarAnimales } from "../../api/animales";
 import { mensajeDeError } from "../../api/client";
-import type { Animal, Uuid } from "../../api/tipos";
-import Badge from "../../components/Badge";
+import type { Animal } from "../../api/tipos";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import { EmptyState, Loading, Notice } from "../../components/Feedback";
-import Field, { Input, SearchInput, Select } from "../../components/Field";
+import Field, { Input, SearchInput } from "../../components/Field";
+import KpiTile from "../../components/KpiTile";
 import PageHeader from "../../components/PageHeader";
-import { Cell, TableHeader, TableRow } from "../../components/Table";
-import { formatearKg, formatearNumero } from "../../lib/formato";
+import { formatearNumero } from "../../lib/formato";
 import { usePuede } from "../auth/useSesion";
 import CamposAnimal from "./CamposAnimal";
+import ChipsDeFiltro from "./ChipsDeFiltro";
 import { FORMULARIO_VACIO, type FormularioAnimal, nuevoAnimalDesde } from "./formularioAnimal";
 import { motivoDeListadoVacio } from "./listadoVacio";
+import { type ChipRodeo, filtrosDeChip, resumenDelRodeo } from "./rodeo";
+import TarjetaAnimal from "./TarjetaAnimal";
 import { useCatalogos } from "./useCatalogos";
-
-const COLUMNAS = "md:grid-cols-[1.4fr_1fr_0.8fr_0.9fr_1.2fr_auto]";
 
 export default function ListadoAnimalesPage() {
   const puedeGestionar = usePuede("rodeo_gestionar");
   const [busqueda, setBusqueda] = useState("");
-  const [idLote, setIdLote] = useState<Uuid | null>(null);
-  const [soloConAlertas, setSoloConAlertas] = useState(false);
+  const [chip, setChip] = useState<ChipRodeo>({ tipo: "todos" });
   const [animales, setAnimales] = useState<Animal[]>([]);
+  // The whole herd, unfiltered: feeds the "Total cabezas" counter whatever chip is active.
+  const [rodeoCompleto, setRodeoCompleto] = useState<Animal[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mostrarAlta, setMostrarAlta] = useState(false);
@@ -33,6 +33,15 @@ export default function ListadoAnimalesPage() {
   const [nuevosDatos, setNuevosDatos] = useState<FormularioAnimal>(FORMULARIO_VACIO);
   const [errorAlta, setErrorAlta] = useState<string | null>(null);
   const { razas, lotes } = useCatalogos();
+
+  const { idLote, conAlertasActivas: soloConAlertas } = filtrosDeChip(chip);
+
+  useEffect(() => {
+    // The counter is a nicety: if it fails the list still works.
+    listarAnimales()
+      .then(setRodeoCompleto)
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     // A newer search or filter makes this response stale.
@@ -65,6 +74,7 @@ export default function ListadoAnimalesPage() {
     try {
       const animal = await crearAnimal(nuevoAnimalDesde(nuevoIdentificador, nuevosDatos));
       setAnimales((actuales) => [animal, ...actuales]);
+      setRodeoCompleto((actuales) => [animal, ...actuales]);
       setNuevoIdentificador("");
       setMostrarAlta(false);
     } catch (err) {
@@ -73,20 +83,29 @@ export default function ListadoAnimalesPage() {
   }
 
   const cabezas = animales.length;
+  const resumen = resumenDelRodeo(rodeoCompleto);
+  const lotePorId = new Map(lotes.map((lote) => [lote.id, lote]));
   const filtros = { busqueda, idLote, conAlertasActivas: soloConAlertas };
 
   function quitarFiltros() {
     setBusqueda("");
-    setIdLote(null);
-    setSoloConAlertas(false);
+    setChip({ tipo: "todos" });
   }
 
   return (
     <section className="space-y-6">
       <PageHeader
         title="Rodeo"
-        subtitle={`${formatearNumero(cabezas)} ${cabezas === 1 ? "cabeza" : "cabezas"}`}
+        subtitle={`${formatearNumero(cabezas)} ${cabezas === 1 ? "resultado" : "resultados"}`}
       />
+
+      <div className="max-w-sm">
+        <KpiTile
+          label="Total cabezas"
+          value={formatearNumero(resumen.cabezas)}
+          detail={`${formatearNumero(lotes.length)} ${lotes.length === 1 ? "lote" : "lotes"} · ${formatearNumero(resumen.conAlertas)} ${resumen.conAlertas === 1 ? "alerta" : "alertas"}`}
+        />
+      </div>
 
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <SearchInput
@@ -96,28 +115,6 @@ export default function ListadoAnimalesPage() {
           placeholder="Buscar por identificador…"
           className="md:max-w-sm md:flex-1"
         />
-        <Select
-          aria-label="Filtrar por lote"
-          value={idLote ?? ""}
-          onChange={(e) => setIdLote(e.target.value || null)}
-          className="md:w-56"
-        >
-          <option value="">Todos los lotes</option>
-          {lotes.map((lote) => (
-            <option key={lote.id} value={lote.id}>
-              Lote {lote.codigo}
-            </option>
-          ))}
-        </Select>
-        <Select
-          aria-label="Filtrar por alertas"
-          value={soloConAlertas ? "con_alertas" : ""}
-          onChange={(e) => setSoloConAlertas(e.target.value === "con_alertas")}
-          className="md:w-56"
-        >
-          <option value="">Todas las alertas</option>
-          <option value="con_alertas">Con alertas activas</option>
-        </Select>
         {puedeGestionar && (
           <Button
             icon={mostrarAlta ? X : Plus}
@@ -129,6 +126,8 @@ export default function ListadoAnimalesPage() {
           </Button>
         )}
       </div>
+
+      <ChipsDeFiltro activo={chip} lotes={lotes} onChange={setChip} />
 
       {puedeGestionar && mostrarAlta && (
         <Card className="md:p-6">
@@ -185,46 +184,13 @@ export default function ListadoAnimalesPage() {
       )}
 
       {animales.length > 0 && (
-        <div className="space-y-2">
-          <TableHeader
-            columns={COLUMNAS}
-            labels={["Identificador", "Raza", "Lote", "Último peso", "Estado", "Acciones"]}
-          />
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {animales.map((animal) => (
-            <TableRow key={animal.id} columns={COLUMNAS}>
-              <span className="min-w-0 truncate text-sm font-bold text-neutral-800">
-                {animal.identificador}
-              </span>
-              <Cell label="Raza">
-                <span className="text-brown-600">{animal.raza ?? "Sin registrar"}</span>
-              </Cell>
-              <Cell label="Lote" muted>
-                {animal.lote_codigo ?? "Sin lote"}
-              </Cell>
-              <Cell label="Último peso">
-                <span className="font-semibold tabular-nums">
-                  {animal.ultimo_peso_kg != null ? formatearKg(animal.ultimo_peso_kg, 1) : "Sin pesajes"}
-                </span>
-              </Cell>
-              <span>
-                {animal.alertas_activas > 0 ? (
-                  <Badge tone="danger">
-                    {animal.alertas_activas === 1
-                      ? "1 alerta activa"
-                      : `${formatearNumero(animal.alertas_activas)} alertas activas`}
-                  </Badge>
-                ) : (
-                  <Badge tone="brand">Sin alertas</Badge>
-                )}
-              </span>
-              <Link
-                to={`/animales/${animal.id}`}
-                className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-neutral-600 hover:text-green-800"
-              >
-                <Eye className="h-[18px] w-[18px]" />
-                Ver ficha
-              </Link>
-            </TableRow>
+            <TarjetaAnimal
+              key={animal.id}
+              animal={animal}
+              lote={animal.id_lote ? (lotePorId.get(animal.id_lote) ?? null) : null}
+            />
           ))}
         </div>
       )}
