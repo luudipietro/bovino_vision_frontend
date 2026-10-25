@@ -38,6 +38,29 @@ mockups **no forman parte del alcance** del proyecto — no están implementados
 propósito, no es un olvido. Donde el mockup mostraba ese dato, se usó algo real en su
 lugar (por ejemplo, "Alertas activas" en vez de "Estado Sanitario" en el panel).
 
+El 24/10/2026 las pantallas se acercaron a los mockups de Claude Design
+(`odd/tasks/alinear-mockups.md`) sin cambiar esa base visual:
+
+- **Captura:** inicio con saludo, botón grande "Nueva captura", "Sesiones recientes" y
+  pastilla "En línea" / "Sin conexión" (`navigator.onLine`, sin texto de sincronización);
+  guía de toma con tres indicadores; "Estimando peso" como lista de estados reales de la
+  captura; resultado con peso grande, ficha (identificador, lote, pesaje anterior, operario)
+  y acciones abajo. "Tomar otra foto" vuelve a la foto del mismo animal: el pesaje es
+  inmutable, así que no existe "descartar la medición".
+- **Rodeo:** chips "Todos" / un lote / "Alertas", contador "Total cabezas", tarjetas con la
+  GMD y su porcentaje sobre la GMD objetivo del lote, encabezado de la ficha con chips de
+  raza, edad y lote, y pesajes con la diferencia en verde o rojo y el operario.
+- **Panel y alertas:** layout del dashboard con la curva "Objetivo" (primer peso real más
+  la GMD objetivo del lote por día) cuando el lote elegido tiene GMD objetivo; alertas como
+  tarjetas con "Ver ficha" y "Resolver" (solo con `rodeo_gestionar`).
+- **Usuarios y roles:** chips por rol con su conteo, estados como badges, "Último acceso" y
+  permisos agrupados ("Ganadería y campo", "Administración") con descripción corta y la marca
+  "Crítico" en `roles_gestionar`. Esos nombres cortos y descripciones viven en el frontend
+  (`permisosRol.ts`), porque `/permisos` solo trae una descripción larga.
+- Quedaron afuera a propósito los datos que el sistema no tiene: precisión del modelo,
+  estado sanitario, pastoreo, exportaciones CSV/PDF, invitaciones, foto de perfil y
+  auditoría.
+
 ## Estructura
 
 - `src/api/` — un archivo por recurso del backend (`animales`, `lotes`, `razas`,
@@ -80,7 +103,8 @@ lugar (por ejemplo, "Alertas activas" en vez de "Estado Sanitario" en el panel).
 - **Límite del backend:** un `null` significa "no cambiar", así que un dato ya cargado se
   puede cambiar pero no borrar; la interfaz no ofrece vaciarlo.
 - **Panel:** el selector de lote filtra el panel y el reporte. La API de alertas no filtra
-  por lote: con un lote elegido se suman las `alertas_activas` de sus animales actuales.
+  por lote: con un lote elegido, la lista de alertas del panel cruza `GET /alertas` con los
+  animales actuales del lote que tienen alertas activas.
 - **Fotos de la sesión:** la pantalla de captura lista las capturas de la sesión con su
   estado. La miniatura sale de la vista previa local mientras exista (fotos tomadas en esa
   pestaña) y, si no, de `GET /imagenes/{id}` por `id_imagen`, así que también se ve al

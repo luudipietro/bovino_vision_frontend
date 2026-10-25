@@ -85,4 +85,12 @@ el navegador contra la API local.
 - El resultado del pesaje muestra fecha y hora, raza, sexo y edad (del animal elegido) y el
   peso anterior con su fecha, o el aviso de primer pesaje cuando `ultimo_peso_previo` es null.
 - Las alertas son `perdida_peso` o `estancamiento`, con la GMD del intervalo en `variacion`
-  (kg/día) y prioridad numérica (1 es la más urgente).
+  (kg/día) y prioridad numérica (1 es la más urgente). `POST /alertas/{id}/resolver` (204, o
+  409 si ya estaba resuelta) la saca de la lista; el botón "Resolver" solo aparece con el
+  permiso `rodeo_gestionar`.
+- `GET /sesiones-captura?limite=N` lista las sesiones de captura del usuario, más nuevas
+  primero, con `cantidad_capturas` y `cantidad_procesadas`: alimenta "Sesiones recientes" en
+  el inicio de la captura.
+- Campos calculados que usa la interfaz: `operario` (quién tomó la foto) en el pesaje y en el
+  historial de pesajes, `gmd_kg_dia` (GMD entre los dos últimos pesajes) en cada animal, y
+  `ultimo_acceso` en cada usuario.

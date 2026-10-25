@@ -1,5 +1,10 @@
-import { apiDelete, apiGet, apiPostForm, apiPostJson } from "./client";
-import type { Captura, CapturaDeSesion, SesionCaptura, Uuid } from "./tipos";
+import { apiDelete, apiGet, apiPostForm, apiPostJson, query } from "./client";
+import type { Captura, CapturaDeSesion, SesionCaptura, SesionReciente, Uuid } from "./tipos";
+
+/** Sessions of the current user, newest first; `limite` goes from 1 to 20 (API default 5). */
+export function listarSesionesRecientes(limite?: number): Promise<SesionReciente[]> {
+  return apiGet(`/sesiones-captura${query({ limite: limite?.toString() })}`);
+}
 
 export function iniciarSesionCaptura(): Promise<SesionCaptura> {
   return apiPostJson("/sesiones-captura");

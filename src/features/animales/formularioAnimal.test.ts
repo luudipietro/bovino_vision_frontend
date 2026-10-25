@@ -19,6 +19,7 @@ const animal: Animal = {
   sexo: "hembra",
   fecha_nacimiento: "2025-03-10",
   ultimo_peso_kg: null,
+  gmd_kg_dia: null,
   alertas_activas: 0,
 };
 

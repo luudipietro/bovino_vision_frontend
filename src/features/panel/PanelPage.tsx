@@ -1,20 +1,27 @@
-import { Layers } from "lucide-react";
+import { BellRing, Layers } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { listarAlertasDelRodeo } from "../../api/alertas";
 import { generarReporte, obtenerPanel } from "../../api/analitica";
 import { listarAnimales } from "../../api/animales";
 import { mensajeDeError } from "../../api/client";
 import { listarLotes } from "../../api/lotes";
-import type { Lote, Panel, Reporte, Uuid } from "../../api/tipos";
+import type { Alerta, Lote, Panel, Reporte, Uuid } from "../../api/tipos";
+import Badge from "../../components/Badge";
 import Button from "../../components/Button";
 import Card, { CardHeader, LinkStrip } from "../../components/Card";
 import Field, { Input, Select } from "../../components/Field";
 import { Loading, Notice } from "../../components/Feedback";
 import KpiTile from "../../components/KpiTile";
-import LineChart from "../../components/LineChart";
+import LineChart, { ChartLegend } from "../../components/LineChart";
 import PageHeader from "../../components/PageHeader";
 import ProgressBar from "../../components/ProgressBar";
 import { formatearFechaCorta, formatearKg, formatearNumero, formatearPorcentaje } from "../../lib/formato";
+import AlertaCard from "../alertas/AlertaCard";
+import { alertasDestacadas, puedeResolverAlertas, textoVerAlertas } from "../alertas/tarjetas";
+import { usePermisos } from "../auth/useSesion";
+import { curvaObjetivo, subtituloDelPanel } from "./panel";
+
+const ALERTAS_DESTACADAS = 3;
 
 const SIN_DATO = "—";
 const kg = (valor: number | null) => (valor != null ? formatearKg(valor, 1) : SIN_DATO);
@@ -79,18 +86,19 @@ function DistribucionPorLote({ lotes, total }: { lotes: Lote[]; total: number })
 }
 
 /**
- * The alerts endpoint has no lot filter: within a lot, the count adds up the active alerts of
- * its current animals.
+ * The alerts endpoint has no lot filter: within a lot, keep the alerts of its current animals.
  */
-async function contarAlertasActivas(idLote: Uuid | null): Promise<number> {
-  if (!idLote) return (await listarAlertasDelRodeo()).length;
+async function cargarAlertasActivas(idLote: Uuid | null): Promise<Alerta[]> {
+  const alertas = await listarAlertasDelRodeo();
+  if (!idLote) return alertas;
   const animales = await listarAnimales({ idLote, conAlertasActivas: true });
-  return animales.reduce((suma, animal) => suma + animal.alertas_activas, 0);
+  const idsDelLote = new Set(animales.map((animal) => animal.id));
+  return alertas.filter((alerta) => idsDelLote.has(alerta.id_animal));
 }
 
 export default function PanelPage() {
   const [panel, setPanel] = useState<Panel | null>(null);
-  const [cantidadAlertas, setCantidadAlertas] = useState(0);
+  const [alertas, setAlertas] = useState<Alerta[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [lotes, setLotes] = useState<Lote[] | null>(null);
   const [errorLotes, setErrorLotes] = useState<string | null>(null);
@@ -99,6 +107,7 @@ export default function PanelPage() {
   const [reporte, setReporte] = useState<Reporte | null>(null);
   const [errorReporte, setErrorReporte] = useState<string | null>(null);
   const [idLote, setIdLote] = useState<Uuid | null>(null);
+  const puedeResolver = puedeResolverAlertas(usePermisos());
 
   useEffect(() => {
     listarLotes()
@@ -109,11 +118,11 @@ export default function PanelPage() {
   useEffect(() => {
     // A newer lot filter makes this response stale.
     let vigente = true;
-    Promise.all([obtenerPanel({ idLote }), contarAlertasActivas(idLote)])
-      .then(([datosPanel, alertas]) => {
+    Promise.all([obtenerPanel({ idLote }), cargarAlertasActivas(idLote)])
+      .then(([datosPanel, activas]) => {
         if (!vigente) return;
         setPanel(datosPanel);
-        setCantidadAlertas(alertas);
+        setAlertas(activas);
       })
       .catch((err: unknown) => vigente && setError(mensajeDeError(err)));
     return () => {
@@ -144,17 +153,21 @@ export default function PanelPage() {
   const puntos = panel.evolucion_peso_promedio.filter((punto) => punto.peso_promedio_kg != null);
   const loteElegido = lotes?.find((lote) => lote.id === idLote);
   const alcance = loteElegido ? `del lote ${loteElegido.codigo}` : "del rodeo";
+  const objetivo = curvaObjetivo(puntos, loteElegido?.gmd_objetivo ?? null);
+  const cantidadAlertas = alertas.length;
+  const subtitulo = subtituloDelPanel({
+    cabezas: panel.cantidad_animales,
+    lotes: lotes?.length ?? 0,
+    codigoLote: loteElegido?.codigo,
+    ultimaFecha: puntos[puntos.length - 1]?.fecha ?? null,
+  });
   const cobertura = panel.cantidad_animales > 0 ? panel.animales_con_gmd / panel.cantidad_animales : 0;
 
   return (
     <section className="min-w-0 space-y-6">
       <PageHeader
         title="Panel del rodeo"
-        subtitle={
-          loteElegido
-            ? `Peso, ganancia diaria y alertas del lote ${loteElegido.codigo}.`
-            : "Peso, ganancia diaria y alertas de todo el rodeo en un vistazo."
-        }
+        subtitle={lotes ? subtitulo : "Peso, ganancia diaria y alertas del rodeo en un vistazo."}
         actions={
           <Select
             aria-label="Filtrar el panel por lote"
@@ -184,21 +197,65 @@ export default function PanelPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card className="flex min-w-0 flex-col gap-5">
-          <CardHeader title="Evolución del peso promedio" subtitle={`Promedio ${alcance} en cada fecha de pesaje`} />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <Card className="flex min-w-0 flex-col gap-5 lg:col-span-2">
+          <CardHeader
+            title="Evolución de peso promedio"
+            subtitle={
+              objetivo && loteElegido
+                ? `Real contra objetivo del lote ${loteElegido.codigo}`
+                : `Promedio ${alcance} en cada fecha de pesaje`
+            }
+            actions={
+              objetivo && <ChartLegend items={[{ name: "Real", tone: "brand" }, { name: "Objetivo", tone: "earth" }]} />
+            }
+          />
           <LineChart
             labels={puntos.map((punto) => formatearFechaCorta(punto.fecha))}
-            series={[{ name: "Peso promedio", values: puntos.map((punto) => punto.peso_promedio_kg) }]}
+            series={[
+              { name: objetivo ? "Real" : "Peso promedio", values: puntos.map((punto) => punto.peso_promedio_kg) },
+              ...(objetivo ? [{ name: "Objetivo", tone: "earth" as const, values: objetivo }] : []),
+            ]}
             formatValue={(valor) => formatearKg(valor, 1)}
             formatAxis={(valor) => formatearKg(valor)}
-            ariaLabel={`Evolución del peso promedio ${alcance}`}
+            ariaLabel={`Evolución del peso promedio ${alcance}${objetivo ? ", real contra objetivo" : ""}`}
           />
           <div className="mt-auto">
             <LinkStrip to="/animales">Ver animales del rodeo</LinkStrip>
           </div>
         </Card>
 
+        <Card className="flex min-w-0 flex-col gap-5">
+          <CardHeader
+            title="Alertas críticas"
+            subtitle={`Las más urgentes ${alcance}`}
+            actions={cantidadAlertas > 0 && <Badge tone="danger">{formatearNumero(cantidadAlertas)}</Badge>}
+          />
+          {cantidadAlertas === 0 ? (
+            <p className="flex items-center gap-2 text-sm text-neutral-500">
+              <BellRing className="h-[18px] w-[18px] text-green-600" /> No hay alertas activas.
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {alertasDestacadas(alertas, ALERTAS_DESTACADAS).map((alerta) => (
+                <AlertaCard
+                  key={alerta.id}
+                  alerta={alerta}
+                  puedeResolver={puedeResolver}
+                  onResuelta={(id) => setAlertas((actuales) => actuales.filter((a) => a.id !== id))}
+                />
+              ))}
+            </ul>
+          )}
+          {cantidadAlertas > 0 && (
+            <div className="mt-auto">
+              <LinkStrip to="/alertas">{textoVerAlertas(cantidadAlertas)}</LinkStrip>
+            </div>
+          )}
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
         <Card className="flex min-w-0 flex-col gap-5">
           <CardHeader title="Composición del rodeo" subtitle="Cobertura de GMD y reparto por lote" />
           <ProgressBar

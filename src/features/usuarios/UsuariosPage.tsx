@@ -25,8 +25,9 @@ import {
   formularioDeUsuario,
   nuevoUsuarioDesde,
 } from "./formularioUsuario";
+import { contarPorRol, estadoDeUsuario, filtrarPorRol, textoUltimoAcceso } from "./listaUsuarios";
 
-const COLUMNAS = "md:grid-cols-[1.4fr_1.6fr_1.1fr_1fr_auto]";
+const COLUMNAS = "md:grid-cols-[1.4fr_1.6fr_1.1fr_1.2fr_1fr_auto]";
 
 /** The one panel open under a row at a time. */
 type Panel =
@@ -35,11 +36,48 @@ type Panel =
   | { tipo: "baja"; id: Uuid; error: string | null };
 
 function EstadoDelUsuario({ usuario, ahora }: { usuario: Usuario; ahora: number }) {
-  if (!usuario.activo) return <Badge tone="neutral">Dado de baja</Badge>;
-  if (usuario.bloqueado_hasta && new Date(usuario.bloqueado_hasta).getTime() > ahora) {
+  const estado = estadoDeUsuario(usuario, ahora);
+  if (estado === "inactivo") return <Badge tone="neutral">Dado de baja</Badge>;
+  if (estado === "bloqueado" && usuario.bloqueado_hasta) {
     return <Badge tone="warning">Bloqueado hasta {formatearFechaHora(usuario.bloqueado_hasta)}</Badge>;
   }
   return <Badge tone="brand">Activo</Badge>;
+}
+
+interface ChipsDeRolProps {
+  conteo: ReturnType<typeof contarPorRol>;
+  activo: Uuid | "";
+  onChange: (idRol: Uuid | "") => void;
+}
+
+/** "Todos · 12" and one chip per role with its count; scrolls sideways when they do not fit. */
+function ChipsDeRol({ conteo, activo, onChange }: ChipsDeRolProps) {
+  const chips = [
+    { id: "" as Uuid | "", etiqueta: `Todos · ${formatearNumero(conteo.total)}` },
+    ...conteo.porRol.map((r) => ({ id: r.id as Uuid | "", etiqueta: `${r.nombre} · ${formatearNumero(r.cantidad)}` })),
+  ];
+  return (
+    <div role="group" aria-label="Filtrar por rol" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+      {chips.map(({ id, etiqueta }) => {
+        const seleccionado = id === activo;
+        return (
+          <button
+            key={id || "todos"}
+            type="button"
+            aria-pressed={seleccionado}
+            onClick={() => onChange(id)}
+            className={`min-h-9 shrink-0 whitespace-nowrap rounded-full border px-4 text-[13px] font-medium transition-colors ${
+              seleccionado
+                ? "border-green-800 bg-green-800 text-white"
+                : "border-neutral-200 bg-white text-neutral-600 hover:border-green-300 hover:text-green-800"
+            }`}
+          >
+            {etiqueta}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 function OpcionesDeRol({ roles }: { roles: Rol[] }) {
@@ -54,8 +92,8 @@ export default function UsuariosPage() {
   const [filtroRol, setFiltroRol] = useState<Uuid | "">("");
   // bumped after every change to reload the list
   const [version, setVersion] = useState(0);
-  const claveActual = `${filtroRol}|${version}`;
-  const [lista, setLista] = useState<{ clave: string; usuarios: Usuario[] } | null>(null);
+  // the full list is loaded once per change so the chip counts do not depend on the active chip
+  const [lista, setLista] = useState<{ version: number; usuarios: Usuario[] } | null>(null);
   const [roles, setRoles] = useState<Rol[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [mostrarAlta, setMostrarAlta] = useState(false);
@@ -79,25 +117,27 @@ export default function UsuariosPage() {
     };
   }, []);
 
-  // an answer that arrives after the filter changed is dropped (the effect was cleaned up)
+  // an answer that arrives after a newer reload was requested is dropped (the effect was cleaned up)
   useEffect(() => {
     let vigente = true;
-    listarUsuarios(filtroRol || null)
+    listarUsuarios()
       .then((usuarios) => {
-        if (vigente) setLista({ clave: claveActual, usuarios });
+        if (vigente) setLista({ version, usuarios });
       })
       .catch((err: unknown) => {
         if (!vigente) return;
         setError(mensajeDeError(err));
-        setLista({ clave: claveActual, usuarios: [] });
+        setLista({ version, usuarios: [] });
       });
     return () => {
       vigente = false;
     };
-  }, [filtroRol, claveActual]);
+  }, [version]);
 
-  const cargando = lista?.clave !== claveActual;
-  const usuarios = lista?.usuarios ?? [];
+  const cargando = lista?.version !== version;
+  const todos = lista?.usuarios ?? [];
+  const conteo = contarPorRol(todos, roles);
+  const usuarios = filtrarPorRol(todos, filtroRol);
   const nombreDelFiltro = roles.find((r) => r.id === filtroRol)?.nombre;
 
   function recargar() {
@@ -326,12 +366,7 @@ export default function UsuariosPage() {
         </Card>
       )}
 
-      <Field label="Filtrar por rol" className="sm:max-w-xs">
-        <Select value={filtroRol} onChange={(e) => cambiarFiltro(e.target.value)}>
-          <option value="">Todos los roles</option>
-          <OpcionesDeRol roles={roles} />
-        </Select>
-      </Field>
+      <ChipsDeRol conteo={conteo} activo={filtroRol} onChange={cambiarFiltro} />
 
       {error && <Notice tone="danger">{error}</Notice>}
       {cargando && <Loading />}
@@ -356,7 +391,7 @@ export default function UsuariosPage() {
 
       {!cargando && usuarios.length > 0 && (
         <div className="space-y-2">
-          <TableHeader columns={COLUMNAS} labels={["Nombre", "Correo", "Rol", "Estado", "Acciones"]} />
+          <TableHeader columns={COLUMNAS} labels={["Nombre", "Correo", "Rol", "Último acceso", "Estado", "Acciones"]} />
           {usuarios.map((usuario) => {
             const abierto = panelDe(usuario);
             if (abierto) return abierto;
@@ -367,6 +402,9 @@ export default function UsuariosPage() {
                   {usuario.correo}
                 </Cell>
                 <Cell label="Rol">{usuario.rol}</Cell>
+                <Cell label="Acceso" muted>
+                  {textoUltimoAcceso(usuario.ultimo_acceso)}
+                </Cell>
                 <span>
                   <EstadoDelUsuario usuario={usuario} ahora={ahora} />
                 </span>
