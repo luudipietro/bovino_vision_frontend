@@ -10,6 +10,7 @@ const usuario: Usuario = {
   rol: "Operario de Campo",
   activo: true,
   bloqueado_hasta: null,
+  ultimo_acceso: null,
 };
 
 describe("nuevoUsuarioDesde", () => {

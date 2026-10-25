@@ -15,6 +15,7 @@ const animal: Animal = {
   sexo: "hembra",
   fecha_nacimiento: "2024-07-10",
   ultimo_peso_kg: null,
+  gmd_kg_dia: null,
   alertas_activas: 0,
 };
 
@@ -31,6 +32,7 @@ const pesaje: Pesaje = {
   lote_codigo: "L1",
   ultimo_peso_previo: { peso_kg: 440, fecha_pesaje: "2026-10-12T09:15:00" },
   alerta: null,
+  operario: null,
 };
 
 const alerta: NonNullable<Pesaje["alerta"]> = {

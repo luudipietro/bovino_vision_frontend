@@ -41,6 +41,8 @@ export interface Animal {
   sexo: Sexo | null;
   fecha_nacimiento: Fecha | null;
   ultimo_peso_kg: number | null;
+  /** GMD between the last two weighings; null with fewer than two. */
+  gmd_kg_dia: number | null;
   alertas_activas: number;
 }
 
@@ -76,6 +78,16 @@ export interface SesionCaptura {
   fecha_inicio: FechaHora;
   fecha_fin: FechaHora | null;
   estado: EstadoSesionCaptura;
+}
+
+/** Capture session of the current user, as listed by `GET /sesiones-captura`. */
+export interface SesionReciente {
+  id: Uuid;
+  fecha_inicio: FechaHora;
+  fecha_fin: FechaHora | null;
+  estado: EstadoSesionCaptura;
+  cantidad_capturas: number;
+  cantidad_procesadas: number;
 }
 
 export type EstadoCaptura = "registrada" | "pendiente" | "procesando" | "procesada" | "fallida";
@@ -153,6 +165,8 @@ export interface Pesaje {
   lote_codigo: string | null;
   ultimo_peso_previo: PesoPrevio | null;
   alerta: AlertaDePesaje | null;
+  /** Name of the user who took the capture. */
+  operario: string | null;
 }
 
 export interface PesajeHistorial {
@@ -165,6 +179,8 @@ export interface PesajeHistorial {
   lote_codigo: string | null;
   /** GMD against the previous weighing; null for the first one or same-day weighings. */
   gmd_kg_dia: number | null;
+  /** Name of the user who took the capture. */
+  operario: string | null;
 }
 
 export interface PuntoEvolucion {
@@ -208,6 +224,8 @@ export interface Usuario {
   rol: string;
   activo: boolean;
   bloqueado_hasta: FechaHora | null;
+  /** Start of the most recent login session; null when the user never logged in. */
+  ultimo_acceso: FechaHora | null;
 }
 
 /** Current session as returned by `POST` and `GET /auth/sesion`. */

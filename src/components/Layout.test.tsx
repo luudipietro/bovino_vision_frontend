@@ -26,6 +26,7 @@ const sesion: Sesion = {
     rol: "Operario de Campo",
     activo: true,
     bloqueado_hasta: null,
+    ultimo_acceso: null,
   },
   permisos: ["capturas_registrar", "rodeo_consultar"],
   expira_en: "2026-10-21T12:00:00Z",
