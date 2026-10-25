@@ -52,7 +52,7 @@ export default function GaleriaSesion({ idSesion, version, vistasPrevias }: Gale
           No pudimos actualizar las fotos de la sesión. {error}
         </Notice>
       )}
-      <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2">
         {recientes.map((captura) => {
           const estado = estadoDeCaptura(captura.estado);
           const vista = vistasPrevias[captura.id];

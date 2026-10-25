@@ -43,7 +43,7 @@ export function useCaptura() {
   const urlsCreadas = useRef<string[]>([]);
 
   // "Pesar este animal" links here with `?animal=<id>`: that animal starts already identified.
-  const [parametros] = useSearchParams();
+  const [parametros, setParametros] = useSearchParams();
   const idAnimalPedido = idAnimalDeConsulta(parametros);
   const [idAnimalResuelto, setIdAnimalResuelto] = useState<Uuid | null>(null);
   const abriendoAnimal = idAnimalPedido !== null && idAnimalResuelto !== idAnimalPedido;
@@ -70,13 +70,22 @@ export function useCaptura() {
     };
   }, [idAnimalPedido]);
 
+  // Going back to the home and tapping "Nueva captura" again resumes the open session.
+  const sesionAbierta = useRef(false);
+
   useEffect(() => {
     if (!sesionPedida) return;
     const consultas = consultaVigente;
     const urls = urlsCreadas;
-    iniciarSesionCaptura()
-      .then((sesion) => setIdSesion(sesion.id))
-      .catch((err: unknown) => setError(mensajeDeError(err)));
+    if (!sesionAbierta.current) {
+      sesionAbierta.current = true;
+      iniciarSesionCaptura()
+        .then((sesion) => setIdSesion(sesion.id))
+        .catch((err: unknown) => {
+          sesionAbierta.current = false;
+          setError(mensajeDeError(err));
+        });
+    }
     return () => {
       consultas.current++;
       urls.current.forEach((url) => URL.revokeObjectURL(url));
@@ -237,9 +246,27 @@ export function useCaptura() {
     setPaso(retroceso.destino);
   }
 
+  /** Leaves the flow for the capture home; a registered, unprocessed photo is discarded first. */
+  async function volverAlInicio() {
+    if (paso === "foto" && !(await quitarFoto())) return;
+    // An estimation in progress keeps running on the server and shows up in the session photos.
+    consultaVigente.current++;
+    setAnimal(null);
+    setCaptura(null);
+    setResultado(null);
+    setError(null);
+    setAviso(null);
+    setPaso("identificar");
+    // Leaving revokes the local previews; the gallery falls back to the API photos.
+    setVistasPrevias({});
+    setIniciada(false);
+    if (idAnimalPedido) setParametros({}, { replace: true });
+  }
+
   return {
     sesionPedida,
     iniciar: () => setIniciada(true),
+    volverAlInicio,
     idSesion,
     vistasPrevias,
     versionGaleria,

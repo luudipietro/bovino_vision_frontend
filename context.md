@@ -46,8 +46,16 @@ El 24/10/2026 las pantallas se acercaron a los mockups de Claude Design
   guía de toma con tres indicadores; "Estimando peso" como lista de estados reales de la
   captura; resultado con peso grande, ficha (identificador, lote, pesaje anterior, operario)
   y acciones abajo. "Tomar otra foto" vuelve a la foto del mismo animal: el pesaje es
-  inmutable, así que no existe "descartar la medición".
-- **Rodeo:** chips "Todos" / un lote / "Alertas", contador "Total cabezas", tarjetas con la
+  inmutable, así que no existe "descartar la medición". "Inicio de captura" vuelve al inicio
+  desde cualquier paso: descarta una foto registrada sin procesar y deja seguir en el
+  servidor una estimación en curso; tocar "Nueva captura" otra vez retoma la misma sesión
+  en lugar de abrir otra. En desktop (`lg`) el inicio va en dos columnas (botón y "Cómo se
+  pesa" a la izquierda, sesiones a la derecha) y el flujo pone el paso a la izquierda y, a
+  la derecha, el animal en captura y las fotos de la sesión; la foto y el resultado también
+  se parten en dos columnas.
+- **Rodeo:** chips "Todos" / un lote / "Alertas", cuatro tiles verdes (total, peso
+  promedio, GMD promedio y alertas activas, calculados sobre el rodeo completo o sobre el
+  lote del chip elegido; la búsqueda y el chip "Alertas" no los cambian), tarjetas con la
   GMD y su porcentaje sobre la GMD objetivo del lote, encabezado de la ficha con chips de
   raza, edad y lote, y pesajes con la diferencia en verde o rojo y el operario.
 - **Panel y alertas:** layout del dashboard con la curva "Objetivo" (primer peso real más

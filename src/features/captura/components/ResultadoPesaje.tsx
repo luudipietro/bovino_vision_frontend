@@ -1,4 +1,4 @@
-import { Camera, CircleCheck, Send, Trash2 } from "lucide-react";
+import { Camera, CircleCheck, RotateCcw, Send } from "lucide-react";
 import type { Animal } from "../../../api/tipos";
 import Badge from "../../../components/Badge";
 import Button from "../../../components/Button";
@@ -88,87 +88,93 @@ function PesoEstimado({
         <Badge tone="brand">{confirmado ? "Confirmado" : "Listo"}</Badge>
       </div>
 
-      <div className="mt-4 aspect-[4/3] w-full overflow-hidden rounded-[14px] bg-green-900">
-        <FotoCaptura
-          idImagen={pesaje.id_imagen}
-          alt={`Foto de ${pesaje.animal_identificador}`}
-          iconoGrande
-        />
-      </div>
-
-      <div className="mt-4">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-green-600">
-          Peso estimado
-        </p>
-        <p className="flex items-baseline gap-2 text-neutral-800">
-          <span className="text-6xl font-bold tracking-tight">
-            {formatearNumero(pesaje.peso_kg, decimales)}
-          </span>
-          <span className="text-xl font-medium text-neutral-500">kg</span>
-        </p>
-      </div>
-
-      <dl className="mt-4 space-y-2 border-t border-neutral-200 pt-4">
-        {ficha.map(({ etiqueta, valor, tono }) => (
-          <div key={etiqueta} className="flex justify-between gap-4">
-            <dt className="text-xs text-neutral-500">{etiqueta}</dt>
-            <dd
-              className={`min-w-0 text-right text-sm font-semibold ${tono ? tonoDelValor[tono] : "text-neutral-800"}`}
-            >
-              {valor}
-            </dd>
+      {/* Desktop: photo and weight on the left, the data sheet and actions on the right. */}
+      <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-8">
+        <div>
+          <div className="mt-4 aspect-[4/3] w-full overflow-hidden rounded-[14px] bg-green-900">
+            <FotoCaptura
+              idImagen={pesaje.id_imagen}
+              alt={`Foto de ${pesaje.animal_identificador}`}
+              iconoGrande
+            />
           </div>
-        ))}
-      </dl>
 
-      {primerPesaje && (
-        <Notice className="mt-4">
-          Es el primer pesaje de este animal: todavía no hay un peso anterior para comparar.
-        </Notice>
-      )}
+          <div className="mt-4">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-green-600">
+              Peso estimado
+            </p>
+            <p className="flex items-baseline gap-2 text-neutral-800">
+              <span className="text-6xl font-bold tracking-tight">
+                {formatearNumero(pesaje.peso_kg, decimales)}
+              </span>
+              <span className="text-xl font-medium text-neutral-500">kg</span>
+            </p>
+          </div>
+        </div>
+        <div>
+          <dl className="mt-4 space-y-2 border-t border-neutral-200 pt-4 lg:mt-4 lg:border-t-0 lg:pt-0">
+            {ficha.map(({ etiqueta, valor, tono }) => (
+              <div key={etiqueta} className="flex justify-between gap-4">
+                <dt className="text-xs text-neutral-500">{etiqueta}</dt>
+                <dd
+                  className={`min-w-0 text-right text-sm font-semibold ${tono ? tonoDelValor[tono] : "text-neutral-800"}`}
+                >
+                  {valor}
+                </dd>
+              </div>
+            ))}
+          </dl>
 
-      {pesaje.alerta && (
-        <Notice tone="danger" className="mt-4">
-          {describirAlerta(pesaje.alerta)}
-        </Notice>
-      )}
+          {primerPesaje && (
+            <Notice className="mt-4">
+              Es el primer pesaje de este animal: todavía no hay un peso anterior para comparar.
+            </Notice>
+          )}
 
-      <div className="mt-6 space-y-3">
-        {confirmado ? (
-          <p className="flex items-center justify-center gap-2 text-sm font-semibold text-green-600">
-            <CircleCheck className="h-5 w-5" /> Resultado confirmado
-          </p>
-        ) : (
-          <Button size="lg" icon={Send} disabled={cargando} onClick={onConfirmar} className="w-full">
-            Confirmar y enviar
-          </Button>
-        )}
-        <Button
-          variant="secondary"
-          size="lg"
-          icon={Camera}
-          disabled={cargando}
-          onClick={onPesarOtroAnimal}
-          className="w-full"
-        >
-          Tomar otra
-        </Button>
-        {error && <Notice tone="danger">{error}</Notice>}
-        <Notice tone="success">
-          La medición ya está guardada en el historial del animal. Confirmarla solo registra tu
-          revisión.
-        </Notice>
-        {!confirmado && (
-          <Button
-            variant="ghost"
-            icon={Trash2}
-            disabled={cargando}
-            onClick={onDescartar}
-            className="w-full"
-          >
-            Tomar otra foto
-          </Button>
-        )}
+          {pesaje.alerta && (
+            <Notice tone="danger" className="mt-4">
+              {describirAlerta(pesaje.alerta)}
+            </Notice>
+          )}
+
+          <div className="mt-6 space-y-3">
+            {confirmado ? (
+              <p className="flex items-center justify-center gap-2 text-sm font-semibold text-green-600">
+                <CircleCheck className="h-5 w-5" /> Resultado confirmado
+              </p>
+            ) : (
+              <Button size="lg" icon={Send} disabled={cargando} onClick={onConfirmar} className="w-full">
+                Confirmar y enviar
+              </Button>
+            )}
+            <Button
+              variant="secondary"
+              size="lg"
+              icon={Camera}
+              disabled={cargando}
+              onClick={onPesarOtroAnimal}
+              className="w-full"
+            >
+              Tomar otra
+            </Button>
+            {error && <Notice tone="danger">{error}</Notice>}
+            <Notice tone="success">
+              La medición ya está guardada en el historial del animal. Confirmarla solo registra tu
+              revisión.
+            </Notice>
+            {!confirmado && (
+              <Button
+                variant="ghost"
+                icon={RotateCcw}
+                disabled={cargando}
+                onClick={onDescartar}
+                className="w-full"
+              >
+                Tomar otra foto
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
     </section>
   );
