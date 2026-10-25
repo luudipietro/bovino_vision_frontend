@@ -2,12 +2,13 @@ import { type FormEvent, useEffect, useState } from "react";
 import { mensajeDeError } from "../../api/client";
 import { guardarPermisosDeRol, listarPermisos, listarRoles } from "../../api/roles";
 import type { CodigoPermiso, Permiso, Rol, Uuid } from "../../api/tipos";
+import Badge from "../../components/Badge";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import { Loading, Notice } from "../../components/Feedback";
 import Field, { Select } from "../../components/Field";
 import PageHeader from "../../components/PageHeader";
-import { alternarPermiso, hayCambiosDePermisos } from "./permisosRol";
+import { agruparPermisos, alternarPermiso, hayCambiosDePermisos } from "./permisosRol";
 
 interface Borrador {
   idRol: Uuid;
@@ -58,6 +59,7 @@ export default function RolesPage() {
   const rol = roles?.find((r) => r.id === idElegido) ?? roles?.[0];
   // unsaved checkboxes only apply to the role they were edited on
   const seleccionados = borrador && rol && borrador.idRol === rol.id ? borrador.permisos : (rol?.permisos ?? []);
+  const grupos = agruparPermisos(permisos);
   const modificado = rol ? hayCambiosDePermisos(rol.permisos, seleccionados) : false;
 
   function elegirRol(id: Uuid) {
@@ -112,20 +114,29 @@ export default function RolesPage() {
               </Select>
             </Field>
 
-            <fieldset className="space-y-3">
-              <legend className="mb-2 text-xs font-medium text-neutral-700">Permisos</legend>
-              {permisos.map((permiso) => (
-                <label key={permiso.codigo} className="flex items-start gap-3 text-sm text-neutral-800">
-                  <input
-                    type="checkbox"
-                    className="mt-0.5 h-4 w-4 accent-green-600"
-                    checked={seleccionados.includes(permiso.codigo)}
-                    onChange={() => alternar(permiso.codigo)}
-                  />
-                  <span>{permiso.descripcion}</span>
-                </label>
-              ))}
-            </fieldset>
+            {grupos.map((grupo) => (
+              <fieldset key={grupo.titulo} className="space-y-1">
+                <legend className="mb-2 text-xs font-medium uppercase text-neutral-500">{grupo.titulo}</legend>
+                {grupo.permisos.map((permiso) => (
+                  <label
+                    key={permiso.codigo}
+                    className="flex cursor-pointer items-start gap-3 rounded-[10px] border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-800 has-[:checked]:border-green-300"
+                  >
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-4 w-4 accent-green-600"
+                      checked={seleccionados.includes(permiso.codigo as CodigoPermiso)}
+                      onChange={() => alternar(permiso.codigo as CodigoPermiso)}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-bold">{permiso.nombre}</span>
+                      <span className="block text-xs text-neutral-500">{permiso.descripcion}</span>
+                    </span>
+                    {permiso.critico && <Badge tone="danger">Crítico</Badge>}
+                  </label>
+                ))}
+              </fieldset>
+            ))}
 
             {error && <Notice tone="danger">{error}</Notice>}
             {guardado && <Notice tone="success">Permisos guardados.</Notice>}
