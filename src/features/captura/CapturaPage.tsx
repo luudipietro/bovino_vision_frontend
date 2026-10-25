@@ -5,10 +5,12 @@ import Card from "../../components/Card";
 import { Loading, Notice } from "../../components/Feedback";
 import PageHeader from "../../components/PageHeader";
 import Stepper from "../../components/Stepper";
+import { useSesion } from "../auth/useSesion";
 import CapturarFoto from "./components/CapturarFoto";
 import EstimandoPeso from "./components/EstimandoPeso";
 import GaleriaSesion from "./components/GaleriaSesion";
 import IdentificarAnimal from "./components/IdentificarAnimal";
+import InicioCaptura from "./components/InicioCaptura";
 import ResultadoPesaje from "./components/ResultadoPesaje";
 import { useCaptura } from "./useCaptura";
 
@@ -20,6 +22,11 @@ function Encabezado() {
 
 export default function CapturaPage() {
   const captura = useCaptura();
+  const { sesion } = useSesion();
+
+  if (!captura.sesionPedida) {
+    return <InicioCaptura nombre={sesion?.usuario.nombre ?? ""} onNuevaCaptura={captura.iniciar} />;
+  }
 
   if (!captura.idSesion) {
     return (
@@ -47,6 +54,7 @@ export default function CapturaPage() {
         error={captura.error}
         onConfirmar={captura.confirmarResultado}
         onPesarOtroAnimal={captura.pesarOtroAnimal}
+        onDescartar={() => void captura.volver()}
       />
     );
   } else if (!captura.animal || captura.paso === "identificar") {
@@ -90,20 +98,23 @@ export default function CapturaPage() {
     );
   }
 
+  // An estimated result brings its own "Tomar otra" and "Descartar" actions.
+  const retroceso = paso === 4 && captura.resultado?.tipo === "estimado" ? null : captura.retroceso;
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <Encabezado />
       <Card className="space-y-6">
         <Stepper step={paso} total={TOTAL_PASOS} />
         {contenido}
-        {captura.retroceso && (
+        {retroceso && (
           <Button
             variant="ghost"
             icon={ArrowLeft}
             disabled={captura.cargando}
             onClick={() => void captura.volver()}
           >
-            {captura.retroceso.etiqueta}
+            {retroceso.etiqueta}
           </Button>
         )}
       </Card>

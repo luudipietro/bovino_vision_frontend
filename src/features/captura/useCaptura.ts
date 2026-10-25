@@ -23,6 +23,8 @@ export type { PasoCaptura, ResultadoCaptura };
 const esperar = () => new Promise<void>((resolve) => setTimeout(resolve, INTERVALO_CONSULTA_MS));
 
 export function useCaptura() {
+  // The capture home comes first: the session starts when the operator taps "Nueva captura".
+  const [iniciada, setIniciada] = useState(false);
   const [idSesion, setIdSesion] = useState<Uuid | null>(null);
   const [paso, setPaso] = useState<PasoCaptura>("identificar");
   const [animal, setAnimal] = useState<Animal | null>(null);
@@ -45,6 +47,8 @@ export function useCaptura() {
   const idAnimalPedido = idAnimalDeConsulta(parametros);
   const [idAnimalResuelto, setIdAnimalResuelto] = useState<Uuid | null>(null);
   const abriendoAnimal = idAnimalPedido !== null && idAnimalResuelto !== idAnimalPedido;
+  // A link for a given animal skips the home.
+  const sesionPedida = iniciada || idAnimalPedido !== null;
 
   useEffect(() => {
     if (!idAnimalPedido) return;
@@ -67,6 +71,7 @@ export function useCaptura() {
   }, [idAnimalPedido]);
 
   useEffect(() => {
+    if (!sesionPedida) return;
     const consultas = consultaVigente;
     const urls = urlsCreadas;
     iniciarSesionCaptura()
@@ -76,7 +81,7 @@ export function useCaptura() {
       consultas.current++;
       urls.current.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, []);
+  }, [sesionPedida]);
 
   function seleccionarAnimal(animalSeleccionado: Animal) {
     setAnimal(animalSeleccionado);
@@ -233,6 +238,8 @@ export function useCaptura() {
   }
 
   return {
+    sesionPedida,
+    iniciar: () => setIniciada(true),
     idSesion,
     vistasPrevias,
     versionGaleria,

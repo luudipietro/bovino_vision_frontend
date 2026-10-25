@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, CircleCheck } from "lucide-react";
+import { Camera, CircleCheck, Send, Trash2 } from "lucide-react";
 import type { Animal } from "../../../api/tipos";
 import Badge from "../../../components/Badge";
 import Button from "../../../components/Button";
@@ -6,7 +6,7 @@ import { Notice } from "../../../components/Feedback";
 import FotoCaptura from "../../../components/FotoCaptura";
 import { formatearNumero } from "../../../lib/formato";
 import { describirAlerta } from "../../alertas/textos";
-import { resumirPesaje } from "../resumenDePesaje";
+import { type FilaDeFicha, fichaDelResultado, resumirPesaje } from "../resumenDePesaje";
 import type { ResultadoCaptura } from "../useCaptura";
 
 interface ResultadoPesajeProps {
@@ -16,7 +16,10 @@ interface ResultadoPesajeProps {
   cargando: boolean;
   error: string | null;
   onConfirmar: () => void;
+  /** "Tomar otra": leaves the animal and starts the next capture of the session. */
   onPesarOtroAnimal: () => void;
+  /** "Tomar otra foto": goes back to the photo step of the same animal (weighings are immutable, nothing is discarded). */
+  onDescartar: () => void;
 }
 
 export default function ResultadoPesaje({
@@ -26,25 +29,29 @@ export default function ResultadoPesaje({
   error,
   onConfirmar,
   onPesarOtroAnimal,
+  onDescartar,
 }: ResultadoPesajeProps) {
+  if (resultado.tipo === "estimado") {
+    return (
+      <PesoEstimado
+        resultado={resultado}
+        animal={animal}
+        cargando={cargando}
+        error={error}
+        onConfirmar={onConfirmar}
+        onPesarOtroAnimal={onPesarOtroAnimal}
+        onDescartar={onDescartar}
+      />
+    );
+  }
+
   return (
     <section>
-      {resultado.tipo === "estimado" ? (
-        <PesoEstimado
-          resultado={resultado}
-          animal={animal}
-          cargando={cargando}
-          error={error}
-          onConfirmar={onConfirmar}
-        />
-      ) : (
-        <Notice tone="danger">
-          <p className="text-sm font-semibold">No se pudo estimar el peso</p>
-          <p className="mt-1">{resultado.captura.motivo_fallo}</p>
-          <p className="mt-1">Registrá una nueva captura para volver a intentarlo.</p>
-        </Notice>
-      )}
-
+      <Notice tone="danger">
+        <p className="text-sm font-semibold">No se pudo estimar el peso</p>
+        <p className="mt-1">{resultado.captura.motivo_fallo}</p>
+        <p className="mt-1">Registrá una nueva captura para volver a intentarlo.</p>
+      </Notice>
       <Button size="lg" onClick={onPesarOtroAnimal} className="mt-6 w-full">
         Pesar otro animal
       </Button>
@@ -52,27 +59,34 @@ export default function ResultadoPesaje({
   );
 }
 
+const tonoDelValor: Record<NonNullable<FilaDeFicha["tono"]>, string> = {
+  positivo: "text-green-600",
+  negativo: "text-danger-text",
+};
+
 function PesoEstimado({
   resultado,
   animal,
   cargando,
   error,
   onConfirmar,
-}: Omit<ResultadoPesajeProps, "resultado" | "onPesarOtroAnimal"> & {
+  onPesarOtroAnimal,
+  onDescartar,
+}: Omit<ResultadoPesajeProps, "resultado"> & {
   resultado: Extract<ResultadoCaptura, { tipo: "estimado" }>;
 }) {
   const { pesaje, captura } = resultado;
-  const diferencia = pesaje.ultimo_peso_previo
-    ? pesaje.peso_kg - pesaje.ultimo_peso_previo.peso_kg
-    : null;
   const decimales = Number.isInteger(pesaje.peso_kg) ? 0 : 1;
-  const { detalles, primerPesaje } = resumirPesaje(pesaje, animal);
+  const ficha = fichaDelResultado(pesaje, animal);
+  const { primerPesaje } = resumirPesaje(pesaje, animal);
+  const confirmado = captura.fecha_revision !== null;
 
   return (
-    <>
-      <p className="text-sm text-neutral-500">
-        Caravana <span className="font-bold text-neutral-800">{pesaje.animal_identificador}</span>
-      </p>
+    <section>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold text-neutral-800">Resultado del pesaje</h2>
+        <Badge tone="brand">{confirmado ? "Confirmado" : "Listo"}</Badge>
+      </div>
 
       <div className="mt-4 aspect-[4/3] w-full overflow-hidden rounded-[14px] bg-green-900">
         <FotoCaptura
@@ -82,33 +96,27 @@ function PesoEstimado({
         />
       </div>
 
-      <div className="mt-4 rounded-[14px] bg-green-50 px-6 py-8 text-center">
+      <div className="mt-4">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-green-600">
-          PESO ESTIMADO
+          Peso estimado
         </p>
-        <p className="mt-2 flex items-baseline justify-center gap-2 text-neutral-800">
+        <p className="flex items-baseline gap-2 text-neutral-800">
           <span className="text-6xl font-bold tracking-tight">
             {formatearNumero(pesaje.peso_kg, decimales)}
           </span>
           <span className="text-xl font-medium text-neutral-500">kg</span>
         </p>
-        {pesaje.lote_codigo && (
-          <p className="mt-3 text-sm text-neutral-600">Lote {pesaje.lote_codigo}</p>
-        )}
-        {!pesaje.alerta && diferencia != null && (
-          <Badge tone="brand" className="mt-3 gap-1">
-            {diferencia >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-            {diferencia >= 0 ? "+" : "-"}
-            {formatearNumero(Math.abs(diferencia), 1)} kg vs. anterior
-          </Badge>
-        )}
       </div>
 
-      <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 rounded-[12px] border border-neutral-200 px-4 py-3 sm:grid-cols-3">
-        {detalles.map(({ etiqueta, valor }) => (
-          <div key={etiqueta} className="min-w-0">
-            <dt className="text-[11px] font-medium uppercase text-neutral-400">{etiqueta}</dt>
-            <dd className="mt-0.5 text-sm font-semibold text-neutral-800">{valor}</dd>
+      <dl className="mt-4 space-y-2 border-t border-neutral-200 pt-4">
+        {ficha.map(({ etiqueta, valor, tono }) => (
+          <div key={etiqueta} className="flex justify-between gap-4">
+            <dt className="text-xs text-neutral-500">{etiqueta}</dt>
+            <dd
+              className={`min-w-0 text-right text-sm font-semibold ${tono ? tonoDelValor[tono] : "text-neutral-800"}`}
+            >
+              {valor}
+            </dd>
           </div>
         ))}
       </dl>
@@ -125,26 +133,43 @@ function PesoEstimado({
         </Notice>
       )}
 
-      {captura.fecha_revision ? (
-        <p className="mt-4 flex items-center justify-center gap-2 text-sm font-semibold text-green-600">
-          <CircleCheck className="h-5 w-5" /> Resultado confirmado
-        </p>
-      ) : (
+      <div className="mt-6 space-y-3">
+        {confirmado ? (
+          <p className="flex items-center justify-center gap-2 text-sm font-semibold text-green-600">
+            <CircleCheck className="h-5 w-5" /> Resultado confirmado
+          </p>
+        ) : (
+          <Button size="lg" icon={Send} disabled={cargando} onClick={onConfirmar} className="w-full">
+            Confirmar y enviar
+          </Button>
+        )}
         <Button
           variant="secondary"
           size="lg"
+          icon={Camera}
           disabled={cargando}
-          onClick={onConfirmar}
-          className="mt-4 w-full"
+          onClick={onPesarOtroAnimal}
+          className="w-full"
         >
-          Confirmar resultado
+          Tomar otra
         </Button>
-      )}
-      {error && (
-        <Notice tone="danger" className="mt-3">
-          {error}
+        {error && <Notice tone="danger">{error}</Notice>}
+        <Notice tone="success">
+          La medición ya está guardada en el historial del animal. Confirmarla solo registra tu
+          revisión.
         </Notice>
-      )}
-    </>
+        {!confirmado && (
+          <Button
+            variant="ghost"
+            icon={Trash2}
+            disabled={cargando}
+            onClick={onDescartar}
+            className="w-full"
+          >
+            Tomar otra foto
+          </Button>
+        )}
+      </div>
+    </section>
   );
 }

@@ -1,4 +1,4 @@
-import { ArrowRight, Camera, ImagePlus, RefreshCcw, Trash2 } from "lucide-react";
+import { ArrowRight, Camera, ImagePlus, RefreshCcw, Ruler, Scan, Sun, Trash2 } from "lucide-react";
 import { type ChangeEvent, useEffect, useRef, useState } from "react";
 import type { Animal, Captura } from "../../../api/tipos";
 import Button from "../../../components/Button";
@@ -18,6 +18,13 @@ interface CapturarFotoProps {
 }
 
 const esquina = "absolute h-8 w-8 border-green-300";
+
+/** The three conditions of a good shot, shown over the framing guide. */
+const INDICADORES = [
+  { texto: "Luz correcta", icono: Sun, colorIcono: "text-green-300" },
+  { texto: "Acercate 1 m", icono: Ruler, colorIcono: "text-warning-500" },
+  { texto: "Encuadre", icono: Scan, colorIcono: "text-green-300" },
+];
 
 export default function CapturarFoto({
   animal,
@@ -89,16 +96,31 @@ export default function CapturarFoto({
             <span className={`${esquina} right-5 top-5 rounded-tr-lg border-r-4 border-t-4`} />
             <span className={`${esquina} bottom-5 left-5 rounded-bl-lg border-b-4 border-l-4`} />
             <span className={`${esquina} bottom-5 right-5 rounded-br-lg border-b-4 border-r-4`} />
-            <span className="absolute inset-x-10 top-1/2 border-t-2 border-dashed border-green-300/70" />
+            <span className="absolute left-1/2 top-[52%] h-[44%] w-[64%] -translate-x-1/2 -translate-y-1/2 rounded-[120px_90px_60px_60px] border-2 border-dashed border-green-300/60" />
             <span className="absolute left-1/2 top-6 -translate-x-1/2 whitespace-nowrap rounded-full bg-green-900/70 px-3 py-1 text-[11px] font-semibold tracking-wider text-green-300 ring-1 ring-green-300/30">
               ESPERANDO ANIMAL
             </span>
-            <p className="absolute inset-x-0 bottom-10 text-center text-xs text-green-300">
-              Alineá el animal con la guía
-            </p>
+            <ul className="absolute inset-x-3 bottom-3 flex gap-2">
+              {INDICADORES.map(({ texto, icono: Icono, colorIcono }) => (
+                <li
+                  key={texto}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-green-900/75 px-1.5 py-2 text-[11px] font-bold text-white"
+                >
+                  <Icono className={`h-4 w-4 shrink-0 ${colorIcono}`} />
+                  {texto}
+                </li>
+              ))}
+            </ul>
           </>
         )}
       </div>
+
+      {!previewUrl && (
+        <div className="mt-4 text-center">
+          <p className="text-base font-bold text-neutral-800">Alineá el animal de perfil con la guía</p>
+          <p className="text-sm text-neutral-500">Cuatro tomas dan la mejor estimación</p>
+        </div>
+      )}
 
       {!captura && (
         <div className="mt-5 grid grid-cols-2 gap-3">
