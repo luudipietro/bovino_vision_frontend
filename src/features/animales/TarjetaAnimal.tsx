@@ -27,7 +27,7 @@ export default function TarjetaAnimal({ animal, lote }: { animal: Animal; lote: 
       to={`/animales/${animal.id}`}
       className="group flex flex-col overflow-hidden rounded-[14px] border border-neutral-200 bg-white shadow-xs transition-colors hover:border-green-300"
     >
-      <div className="relative aspect-[16/9] bg-green-900">
+      <div className="relative h-36 shrink-0 overflow-hidden bg-green-900">
         {animal.id_imagen_ultimo_pesaje ? (
           <FotoCaptura idImagen={animal.id_imagen_ultimo_pesaje} alt={`Foto de ${animal.identificador}`} iconoGrande />
         ) : (

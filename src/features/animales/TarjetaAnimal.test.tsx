@@ -41,6 +41,17 @@ describe("TarjetaAnimal", () => {
     expect(html).toContain('aria-label="Sin foto: todavía no se pesó"');
   });
 
+  it("bounds both the photo and placeholder to a compact preview", () => {
+    for (const idImagen of ["img-1", null]) {
+      const html = renderizar({ ...animal, id_imagen_ultimo_pesaje: idImagen });
+      expect(html).toContain('class="relative h-36 shrink-0 overflow-hidden bg-green-900"');
+      expect(html).not.toContain("aspect-[16/9]");
+      expect(html).toContain('href="/animales/a1"');
+      expect(html).toContain("AR-1042");
+      expect(html).toContain("Lote A-12");
+    }
+  });
+
   it("keeps the lot on top of the photo", () => {
     expect(renderizar(animal)).toContain("Lote A-12");
   });
