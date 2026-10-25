@@ -17,6 +17,7 @@ const animal: Animal = {
   ultimo_peso_kg: null,
   gmd_kg_dia: null,
   alertas_activas: 0,
+  id_imagen_ultimo_pesaje: null,
 };
 
 const pesaje: Pesaje = {

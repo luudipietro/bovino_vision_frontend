@@ -44,6 +44,8 @@ export interface Animal {
   /** GMD between the last two weighings; null with fewer than two. */
   gmd_kg_dia: number | null;
   alertas_activas: number;
+  /** Photo used by the latest weighing, served by `GET /imagenes/{id}`; null when never weighed. */
+  id_imagen_ultimo_pesaje: Uuid | null;
 }
 
 export interface NuevoAnimal {
