@@ -15,7 +15,7 @@ import CamposAnimal from "./CamposAnimal";
 import ChipsDeFiltro from "./ChipsDeFiltro";
 import { FORMULARIO_VACIO, type FormularioAnimal, nuevoAnimalDesde } from "./formularioAnimal";
 import { motivoDeListadoVacio } from "./listadoVacio";
-import { type ChipRodeo, filtrosDeChip, resumenDelRodeo } from "./rodeo";
+import { type ChipRodeo, filtrosDeChip, resumenDelRodeo, tarjetasDelRodeo } from "./rodeo";
 import TarjetaAnimal from "./TarjetaAnimal";
 import { useCatalogos } from "./useCatalogos";
 
@@ -24,7 +24,7 @@ export default function ListadoAnimalesPage() {
   const [busqueda, setBusqueda] = useState("");
   const [chip, setChip] = useState<ChipRodeo>({ tipo: "todos" });
   const [animales, setAnimales] = useState<Animal[]>([]);
-  // The whole herd, unfiltered: feeds the "Total cabezas" counter whatever chip is active.
+  // The whole herd, unfiltered: feeds the stat tiles whatever search or chip is active.
   const [rodeoCompleto, setRodeoCompleto] = useState<Animal[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,8 +83,13 @@ export default function ListadoAnimalesPage() {
   }
 
   const cabezas = animales.length;
-  const resumen = resumenDelRodeo(rodeoCompleto);
   const lotePorId = new Map(lotes.map((lote) => [lote.id, lote]));
+  // A lot chip narrows the tiles to that lot; search and the alerts chip only narrow the list.
+  const alcance = idLote ? rodeoCompleto.filter((animal) => animal.id_lote === idLote) : rodeoCompleto;
+  const tarjetas = tarjetasDelRodeo(
+    resumenDelRodeo(alcance),
+    idLote ? (lotePorId.get(idLote)?.codigo ?? null) : null,
+  );
   const filtros = { busqueda, idLote, conAlertasActivas: soloConAlertas };
 
   function quitarFiltros() {
@@ -99,12 +104,10 @@ export default function ListadoAnimalesPage() {
         subtitle={`${formatearNumero(cabezas)} ${cabezas === 1 ? "resultado" : "resultados"}`}
       />
 
-      <div className="max-w-sm">
-        <KpiTile
-          label="Total cabezas"
-          value={formatearNumero(resumen.cabezas)}
-          detail={`${formatearNumero(lotes.length)} ${lotes.length === 1 ? "lote" : "lotes"} · ${formatearNumero(resumen.conAlertas)} ${resumen.conAlertas === 1 ? "alerta" : "alertas"}`}
-        />
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        {tarjetas.map(({ etiqueta, valor, detalle }) => (
+          <KpiTile key={etiqueta} label={etiqueta} value={valor} detail={detalle} />
+        ))}
       </div>
 
       <div className="flex flex-col gap-3 md:flex-row md:items-center">

@@ -1,5 +1,5 @@
 import type { Animal, Uuid } from "../../api/tipos";
-import { formatearEdad, formatearFechaCorta, formatearKg } from "../../lib/formato";
+import { formatearEdad, formatearFechaCorta, formatearKg, formatearNumero } from "../../lib/formato";
 
 /** Filter chip of the herd list: the whole herd, one lot, or the animals with active alerts. */
 export type ChipRodeo = { tipo: "todos" } | { tipo: "alertas" } | { tipo: "lote"; idLote: Uuid };
@@ -16,14 +16,78 @@ export function porcentajeDeObjetivo(gmd: number | null, objetivo: number | null
   return gmd / objetivo;
 }
 
-/** Figures of the "Total cabezas" counter. */
-export function resumenDelRodeo(animales: Pick<Animal, "alertas_activas">[]): {
+export interface ResumenRodeo {
   cabezas: number;
   conAlertas: number;
-} {
+  /** Sum of the active alerts of every animal. */
+  alertas: number;
+  /** Distinct lots with at least one of these animals. */
+  lotes: number;
+  /** Mean of the last weight of the animals that were weighed; null when none was. */
+  pesoPromedio: number | null;
+  conPeso: number;
+  /** Mean GMD of the animals that have one (two weighings or more); null when none has. */
+  gmdPromedio: number | null;
+  conGmd: number;
+}
+
+function promedio(valores: number[]): number | null {
+  return valores.length === 0 ? null : valores.reduce((suma, valor) => suma + valor, 0) / valores.length;
+}
+
+export interface TarjetaDeRodeo {
+  etiqueta: string;
+  valor: string;
+  detalle: string;
+}
+
+function animales(cantidad: number): string {
+  return `${formatearNumero(cantidad)} ${cantidad === 1 ? "animal" : "animales"}`;
+}
+
+/** The four stat tiles of the herd list; `codigoLote` is set when they describe one lot. */
+export function tarjetasDelRodeo(resumen: ResumenRodeo, codigoLote: string | null): TarjetaDeRodeo[] {
+  const lotesActivos = `${formatearNumero(resumen.lotes)} ${resumen.lotes === 1 ? "lote activo" : "lotes activos"}`;
+  return [
+    {
+      etiqueta: "Total animales",
+      valor: formatearNumero(resumen.cabezas),
+      detalle: codigoLote ? `Lote ${codigoLote}` : lotesActivos,
+    },
+    {
+      etiqueta: "Peso promedio",
+      valor: resumen.pesoPromedio == null ? "—" : formatearKg(resumen.pesoPromedio),
+      detalle: resumen.conPeso > 0 ? `Último pesaje de ${animales(resumen.conPeso)}` : "Todavía sin pesajes",
+    },
+    {
+      etiqueta: "GMD promedio",
+      valor: resumen.gmdPromedio == null ? "—" : `${formatearNumero(resumen.gmdPromedio, 2)} kg/día`,
+      detalle:
+        resumen.conGmd > 0 ? `${animales(resumen.conGmd)} con dos pesajes o más` : "Hace falta un segundo pesaje",
+    },
+    {
+      etiqueta: "Alertas activas",
+      valor: formatearNumero(resumen.alertas),
+      detalle: resumen.conAlertas > 0 ? `En ${animales(resumen.conAlertas)}` : "Ninguna pendiente",
+    },
+  ];
+}
+
+/** Figures of the herd stat tiles, for the whole herd or the animals of one lot. */
+export function resumenDelRodeo(
+  animales: Pick<Animal, "id_lote" | "ultimo_peso_kg" | "gmd_kg_dia" | "alertas_activas">[],
+): ResumenRodeo {
+  const pesos = animales.flatMap((animal) => (animal.ultimo_peso_kg == null ? [] : [animal.ultimo_peso_kg]));
+  const gmds = animales.flatMap((animal) => (animal.gmd_kg_dia == null ? [] : [animal.gmd_kg_dia]));
   return {
     cabezas: animales.length,
     conAlertas: animales.filter((animal) => animal.alertas_activas > 0).length,
+    alertas: animales.reduce((suma, animal) => suma + animal.alertas_activas, 0),
+    lotes: new Set(animales.flatMap((animal) => (animal.id_lote ? [animal.id_lote] : []))).size,
+    pesoPromedio: promedio(pesos),
+    conPeso: pesos.length,
+    gmdPromedio: promedio(gmds),
+    conGmd: gmds.length,
   };
 }
 

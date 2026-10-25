@@ -6,6 +6,7 @@ import {
   lineaFechaOperario,
   porcentajeDeObjetivo,
   resumenDelRodeo,
+  tarjetasDelRodeo,
 } from "./rodeo";
 
 describe("filtrosDeChip", () => {
@@ -42,13 +43,68 @@ describe("porcentajeDeObjetivo", () => {
 });
 
 describe("resumenDelRodeo", () => {
-  it("counts every animal and those with active alerts", () => {
-    const resumen = resumenDelRodeo([{ alertas_activas: 0 }, { alertas_activas: 2 }, { alertas_activas: 1 }]);
-    expect(resumen).toEqual({ cabezas: 3, conAlertas: 2 });
+  const animal = (datos: Partial<Parameters<typeof resumenDelRodeo>[0][number]>) => ({
+    id_lote: null,
+    ultimo_peso_kg: null,
+    gmd_kg_dia: null,
+    alertas_activas: 0,
+    ...datos,
   });
 
-  it("is zero for an empty herd", () => {
-    expect(resumenDelRodeo([])).toEqual({ cabezas: 0, conAlertas: 0 });
+  it("counts every animal and those with active alerts", () => {
+    const resumen = resumenDelRodeo([
+      animal({ alertas_activas: 0 }),
+      animal({ alertas_activas: 2 }),
+      animal({ alertas_activas: 1 }),
+    ]);
+    expect(resumen).toMatchObject({ cabezas: 3, conAlertas: 2 });
+  });
+
+  it("adds up every active alert, not only the animals that have them", () => {
+    const resumen = resumenDelRodeo([animal({ alertas_activas: 2 }), animal({ alertas_activas: 1 })]);
+    expect(resumen.alertas).toBe(3);
+  });
+
+  it("counts the distinct lots that have animals, leaving out animals without a lot", () => {
+    const resumen = resumenDelRodeo([
+      animal({ id_lote: "a" }),
+      animal({ id_lote: "a" }),
+      animal({ id_lote: "b" }),
+      animal({ id_lote: null }),
+    ]);
+    expect(resumen.lotes).toBe(2);
+  });
+
+  it("averages the last weight of the animals that were weighed", () => {
+    const resumen = resumenDelRodeo([
+      animal({ ultimo_peso_kg: 400 }),
+      animal({ ultimo_peso_kg: 450 }),
+      animal({ ultimo_peso_kg: null }),
+    ]);
+    expect(resumen).toMatchObject({ pesoPromedio: 425, conPeso: 2 });
+  });
+
+  it("averages the GMD of the animals that have one", () => {
+    const resumen = resumenDelRodeo([
+      animal({ gmd_kg_dia: 0.8 }),
+      animal({ gmd_kg_dia: 1 }),
+      animal({ gmd_kg_dia: null }),
+    ]);
+    expect(resumen.gmdPromedio).toBeCloseTo(0.9);
+    expect(resumen.conGmd).toBe(2);
+  });
+
+  it("is zero, with no averages, for an empty herd", () => {
+    expect(resumenDelRodeo([])).toEqual({
+      cabezas: 0,
+      conAlertas: 0,
+      alertas: 0,
+      lotes: 0,
+      pesoPromedio: null,
+      conPeso: 0,
+      gmdPromedio: null,
+      conGmd: 0,
+    });
   });
 });
 
@@ -91,5 +147,45 @@ describe("chipsDeFicha", () => {
   it("says what is missing instead of hiding the chip", () => {
     const animal = { raza: null, fecha_nacimiento: null, lote_codigo: null };
     expect(chipsDeFicha(animal, hoy)).toEqual(["Raza sin registrar", "Edad sin registrar", "Sin lote"]);
+  });
+});
+
+describe("tarjetasDelRodeo", () => {
+  const vacio = resumenDelRodeo([]);
+
+  it("describes the whole herd by its active lots", () => {
+    const [total] = tarjetasDelRodeo({ ...vacio, cabezas: 9, lotes: 3 }, null);
+    expect(total).toEqual({ etiqueta: "Total animales", valor: "9", detalle: "3 lotes activos" });
+  });
+
+  it("names the lot when the tiles are about one lot", () => {
+    const [total] = tarjetasDelRodeo({ ...vacio, cabezas: 3, lotes: 1 }, "A-12");
+    expect(total?.detalle).toBe("Lote A-12");
+  });
+
+  it("shows the average weight and how many animals it comes from", () => {
+    const [, peso] = tarjetasDelRodeo({ ...vacio, pesoPromedio: 412.4, conPeso: 1 }, null);
+    expect(peso).toEqual({ etiqueta: "Peso promedio", valor: "412 kg", detalle: "Último pesaje de 1 animal" });
+  });
+
+  it("shows the average GMD with two decimals", () => {
+    const [, , gmd] = tarjetasDelRodeo({ ...vacio, gmdPromedio: 0.845, conGmd: 4 }, null);
+    expect(gmd).toEqual({
+      etiqueta: "GMD promedio",
+      valor: "0,85 kg/día",
+      detalle: "4 animales con dos pesajes o más",
+    });
+  });
+
+  it("explains the empty averages instead of showing zero", () => {
+    const [, peso, gmd] = tarjetasDelRodeo(vacio, null);
+    expect(peso).toMatchObject({ valor: "—", detalle: "Todavía sin pesajes" });
+    expect(gmd).toMatchObject({ valor: "—", detalle: "Hace falta un segundo pesaje" });
+  });
+
+  it("counts the active alerts and the animals that have them", () => {
+    const [, , , alertas] = tarjetasDelRodeo({ ...vacio, alertas: 3, conAlertas: 2 }, null);
+    expect(alertas).toEqual({ etiqueta: "Alertas activas", valor: "3", detalle: "En 2 animales" });
+    expect(tarjetasDelRodeo(vacio, null)[3]?.detalle).toBe("Ninguna pendiente");
   });
 });
