@@ -4,6 +4,7 @@ import { obtenerAnimal } from "../../api/animales";
 import {
   confirmarCaptura,
   descartarCaptura,
+  finalizarSesionCaptura,
   iniciarSesionCaptura,
   obtenerCaptura,
   subirCaptura,
@@ -15,6 +16,7 @@ import { esperarResultado, type ResultadoCaptura } from "./esperarResultado";
 import { type PasoCaptura, retrocesoDesde } from "./navegacion";
 import { reducirFoto } from "./reducirFoto";
 import { idAnimalDeConsulta } from "./rutaDeCaptura";
+import { crearSesionPerezosa } from "./sesionPerezosa";
 
 const INTERVALO_CONSULTA_MS = 1000;
 
@@ -23,8 +25,12 @@ export type { PasoCaptura, ResultadoCaptura };
 const esperar = () => new Promise<void>((resolve) => setTimeout(resolve, INTERVALO_CONSULTA_MS));
 
 export function useCaptura() {
-  // The capture home comes first: the session starts when the operator taps "Nueva captura".
+  // The capture home comes first; the session starts with the first photo and is finalized
+  // when the operator goes back to the home or leaves the page.
   const [iniciada, setIniciada] = useState(false);
+  const [sesionDeCaptura] = useState(() =>
+    crearSesionPerezosa({ iniciar: iniciarSesionCaptura, finalizar: finalizarSesionCaptura }),
+  );
   const [idSesion, setIdSesion] = useState<Uuid | null>(null);
   const [paso, setPaso] = useState<PasoCaptura>("identificar");
   const [animal, setAnimal] = useState<Animal | null>(null);
@@ -70,27 +76,18 @@ export function useCaptura() {
     };
   }, [idAnimalPedido]);
 
-  // Going back to the home and tapping "Nueva captura" again resumes the open session.
-  const sesionAbierta = useRef(false);
-
   useEffect(() => {
     if (!sesionPedida) return;
     const consultas = consultaVigente;
     const urls = urlsCreadas;
-    if (!sesionAbierta.current) {
-      sesionAbierta.current = true;
-      iniciarSesionCaptura()
-        .then((sesion) => setIdSesion(sesion.id))
-        .catch((err: unknown) => {
-          sesionAbierta.current = false;
-          setError(mensajeDeError(err));
-        });
-    }
     return () => {
       consultas.current++;
       urls.current.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [sesionPedida]);
+
+  // Leaving the page through the menu also closes the session; nobody is left to show a failure.
+  useEffect(() => () => void sesionDeCaptura.cerrar().catch(() => {}), [sesionDeCaptura]);
 
   function seleccionarAnimal(animalSeleccionado: Animal) {
     setAnimal(animalSeleccionado);
@@ -102,14 +99,16 @@ export function useCaptura() {
   }
 
   async function subirFoto(archivo: File) {
-    if (!idSesion || !animal) return;
+    if (!animal) return;
     setCargando(true);
     setError(null);
     setAviso(null);
     try {
       // The photo is shrunk right before the upload; the local preview keeps the original.
       const reducida = await reducirFoto(archivo);
-      const nueva = await subirCaptura({ idSesion, idAnimal: animal.id, archivo: reducida });
+      const idSesionActual = await sesionDeCaptura.obtener();
+      setIdSesion(idSesionActual);
+      const nueva = await subirCaptura({ idSesion: idSesionActual, idAnimal: animal.id, archivo: reducida });
       const url = URL.createObjectURL(archivo);
       urlsCreadas.current.push(url);
       setCaptura(nueva);
@@ -246,9 +245,15 @@ export function useCaptura() {
     setPaso(retroceso.destino);
   }
 
-  /** Leaves the flow for the capture home; a registered, unprocessed photo is discarded first. */
+  /** Leaves the flow for the capture home; a registered, unprocessed photo is discarded first and the session is finalized. */
   async function volverAlInicio() {
     if (paso === "foto" && !(await quitarFoto())) return;
+    setCargando(true);
+    // Awaited so the recent sessions on the home already show it as closed. A failure leaves it
+    // open, which does not stop the operator from leaving.
+    await sesionDeCaptura.cerrar().catch(() => {});
+    setCargando(false);
+    setIdSesion(null);
     // An estimation in progress keeps running on the server and shows up in the session photos.
     consultaVigente.current++;
     setAnimal(null);

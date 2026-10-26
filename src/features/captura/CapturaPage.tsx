@@ -76,19 +76,6 @@ export default function CapturaPage() {
     <Encabezado deshabilitado={captura.cargando} onVolver={() => void captura.volverAlInicio()} />
   );
 
-  if (!captura.idSesion) {
-    return (
-      <div className="space-y-6">
-        {encabezado}
-        {captura.error ? (
-          <Notice tone="danger">{captura.error}</Notice>
-        ) : (
-          <Loading>Iniciando sesión de captura…</Loading>
-        )}
-      </div>
-    );
-  }
-
   let paso = 2;
   let contenido: ReactNode;
 
@@ -171,11 +158,13 @@ export default function CapturaPage() {
           <div className="hidden lg:block">
             <AnimalEnCaptura animal={captura.animal} />
           </div>
-          <GaleriaSesion
-            idSesion={captura.idSesion}
-            version={captura.versionGaleria}
-            vistasPrevias={captura.vistasPrevias}
-          />
+          {captura.idSesion && (
+            <GaleriaSesion
+              idSesion={captura.idSesion}
+              version={captura.versionGaleria}
+              vistasPrevias={captura.vistasPrevias}
+            />
+          )}
         </aside>
       </div>
     </div>

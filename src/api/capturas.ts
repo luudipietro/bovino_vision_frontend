@@ -10,6 +10,11 @@ export function iniciarSesionCaptura(): Promise<SesionCaptura> {
   return apiPostJson("/sesiones-captura");
 }
 
+/** Closes the session: no more photos can be added; estimations already requested keep running. */
+export function finalizarSesionCaptura(idSesion: Uuid): Promise<SesionCaptura> {
+  return apiPostJson(`/sesiones-captura/${idSesion}/finalizar`);
+}
+
 /** Registers the photo; the API answers 422 when the image is not acceptable. */
 export function subirCaptura({
   idSesion,
