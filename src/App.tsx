@@ -7,6 +7,7 @@ import LoginPage from "./features/auth/LoginPage";
 import RedireccionDeInicio from "./features/auth/RedireccionDeInicio";
 import RutaProtegida from "./features/auth/RutaProtegida";
 import CapturaPage from "./features/captura/CapturaPage";
+import SesionCapturaPage from "./features/captura/SesionCapturaPage";
 import ListadoLotesPage from "./features/lotes/ListadoLotesPage";
 import PanelPage from "./features/panel/PanelPage";
 import RolesPage from "./features/roles/RolesPage";
@@ -20,6 +21,7 @@ export default function App() {
         <Route element={<Layout />}>
           <Route index element={<RedireccionDeInicio />} />
           <Route path="/captura" element={<CapturaPage />} />
+          <Route path="/captura/sesiones/:id" element={<SesionCapturaPage />} />
           <Route path="/animales" element={<ListadoAnimalesPage />} />
           <Route path="/animales/:id" element={<FichaAnimalPage />} />
           <Route path="/lotes" element={<ListadoLotesPage />} />

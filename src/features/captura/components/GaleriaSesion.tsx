@@ -4,7 +4,8 @@ import { mensajeDeError } from "../../../api/client";
 import type { CapturaDeSesion, Uuid } from "../../../api/tipos";
 import Badge from "../../../components/Badge";
 import Card, { CardHeader } from "../../../components/Card";
-import { Notice } from "../../../components/Feedback";
+import { Camera } from "lucide-react";
+import { EmptyState, Loading, Notice } from "../../../components/Feedback";
 import FotoCaptura from "../../../components/FotoCaptura";
 import { formatearFechaHora } from "../../../lib/formato";
 import { estadoDeCaptura } from "../estadoCaptura";
@@ -15,11 +16,13 @@ interface GaleriaSesionProps {
   version: number;
   /** Local previews by capture id (photos taken in this tab); the rest use the API thumbnail. */
   vistasPrevias: Record<Uuid, string>;
+  /** Shows the loading and empty states instead of rendering nothing (session detail page). */
+  mostrarVacia?: boolean;
 }
 
-/** Photos of the current capture session (CU-13). */
-export default function GaleriaSesion({ idSesion, version, vistasPrevias }: GaleriaSesionProps) {
-  const [capturas, setCapturas] = useState<CapturaDeSesion[]>([]);
+/** Photos of a capture session (CU-13). */
+export default function GaleriaSesion({ idSesion, version, vistasPrevias, mostrarVacia = false }: GaleriaSesionProps) {
+  const [capturas, setCapturas] = useState<CapturaDeSesion[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -36,16 +39,25 @@ export default function GaleriaSesion({ idSesion, version, vistasPrevias }: Gale
     };
   }, [idSesion, version]);
 
-  if (capturas.length === 0 && !error) return null;
+  if (!error && (capturas === null || capturas.length === 0)) {
+    if (!mostrarVacia) return null;
+    if (capturas === null) return <Loading>Cargando fotos…</Loading>;
+    return (
+      <EmptyState icon={Camera} title="Sesión sin fotos">
+        En esta sesión no se registró ninguna captura.
+      </EmptyState>
+    );
+  }
 
+  const lista = capturas ?? [];
   // Newest first, as the operator remembers them.
-  const recientes = [...capturas].reverse();
+  const recientes = [...lista].reverse();
 
   return (
     <Card className="md:p-6">
       <CardHeader
         title="Fotos de esta sesión"
-        subtitle={`${capturas.length} ${capturas.length === 1 ? "captura" : "capturas"}`}
+        subtitle={`${lista.length} ${lista.length === 1 ? "captura" : "capturas"}`}
       />
       {error && (
         <Notice tone="warning" className="mt-4">

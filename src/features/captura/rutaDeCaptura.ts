@@ -12,3 +12,8 @@ export function idAnimalDeConsulta(parametros: URLSearchParams): Uuid | null {
   const id = parametros.get(PARAMETRO_ANIMAL)?.trim();
   return id ? id : null;
 }
+
+/** Detail of a capture session: its photos and their state. */
+export function rutaDeSesion(idSesion: Uuid): string {
+  return `/captura/sesiones/${idSesion}`;
+}
