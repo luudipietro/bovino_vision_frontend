@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { listarCapturasDeSesion } from "../../../api/capturas";
 import { mensajeDeError } from "../../../api/client";
 import type { CapturaDeSesion, Uuid } from "../../../api/tipos";
@@ -9,6 +10,7 @@ import { EmptyState, Loading, Notice } from "../../../components/Feedback";
 import FotoCaptura from "../../../components/FotoCaptura";
 import { formatearFechaHora } from "../../../lib/formato";
 import { estadoDeCaptura } from "../estadoCaptura";
+import { rutaDeResultado } from "../rutaDeCaptura";
 
 interface GaleriaSesionProps {
   idSesion: Uuid;
@@ -16,12 +18,12 @@ interface GaleriaSesionProps {
   version: number;
   /** Local previews by capture id (photos taken in this tab); the rest use the API thumbnail. */
   vistasPrevias: Record<Uuid, string>;
-  /** Shows the loading and empty states instead of rendering nothing (session detail page). */
-  mostrarVacia?: boolean;
+  /** Session detail page: shows the loading and empty states, links each photo to its result and uses a wider grid. */
+  consulta?: boolean;
 }
 
 /** Photos of a capture session (CU-13). */
-export default function GaleriaSesion({ idSesion, version, vistasPrevias, mostrarVacia = false }: GaleriaSesionProps) {
+export default function GaleriaSesion({ idSesion, version, vistasPrevias, consulta = false }: GaleriaSesionProps) {
   const [capturas, setCapturas] = useState<CapturaDeSesion[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,7 +42,7 @@ export default function GaleriaSesion({ idSesion, version, vistasPrevias, mostra
   }, [idSesion, version]);
 
   if (!error && (capturas === null || capturas.length === 0)) {
-    if (!mostrarVacia) return null;
+    if (!consulta) return null;
     if (capturas === null) return <Loading>Cargando fotos…</Loading>;
     return (
       <EmptyState icon={Camera} title="Sesión sin fotos">
@@ -64,12 +66,14 @@ export default function GaleriaSesion({ idSesion, version, vistasPrevias, mostra
           No pudimos actualizar las fotos de la sesión. {error}
         </Notice>
       )}
-      <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2">
+      <ul
+        className={`mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 ${consulta ? "lg:grid-cols-4 xl:grid-cols-5" : "lg:grid-cols-2"}`}
+      >
         {recientes.map((captura) => {
           const estado = estadoDeCaptura(captura.estado);
           const vista = vistasPrevias[captura.id];
-          return (
-            <li key={captura.id} className="overflow-hidden rounded-[10px] border border-neutral-200 bg-white">
+          const contenido = (
+            <>
               <div className="flex aspect-[4/3] items-center justify-center bg-green-900">
                 {vista ? (
                   <img
@@ -93,6 +97,20 @@ export default function GaleriaSesion({ idSesion, version, vistasPrevias, mostra
                   <p className="text-[11px] text-danger-text">{captura.motivo_fallo}</p>
                 )}
               </div>
+            </>
+          );
+          return (
+            <li key={captura.id} className="overflow-hidden rounded-[10px] border border-neutral-200 bg-white">
+              {consulta ? (
+                <Link
+                  to={rutaDeResultado(captura.id)}
+                  className="block h-full transition-colors hover:bg-green-50"
+                >
+                  {contenido}
+                </Link>
+              ) : (
+                contenido
+              )}
             </li>
           );
         })}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { idAnimalDeConsulta, rutaDeCapturaParaAnimal, rutaDeSesion } from "./rutaDeCaptura";
+import { idAnimalDeConsulta, rutaDeCapturaParaAnimal, rutaDeResultado, rutaDeSesion } from "./rutaDeCaptura";
 
 describe("rutaDeCapturaParaAnimal", () => {
   it("opens the capture page with the animal in the `animal` query parameter", () => {
@@ -32,5 +32,11 @@ describe("rutaDeSesion", () => {
     expect(rutaDeSesion("3f2b8c1e-7d4a-4c55-9a10-0b6e2d8f4a11")).toBe(
       "/captura/sesiones/3f2b8c1e-7d4a-4c55-9a10-0b6e2d8f4a11",
     );
+  });
+});
+
+describe("rutaDeResultado", () => {
+  it("opens the result of one capture under /captura/capturas", () => {
+    expect(rutaDeResultado("9a1c")).toBe("/captura/capturas/9a1c");
   });
 });

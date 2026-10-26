@@ -16,10 +16,10 @@ interface ResultadoPesajeProps {
   cargando: boolean;
   error: string | null;
   onConfirmar: () => void;
-  /** "Tomar otra": leaves the animal and starts the next capture of the session. */
-  onPesarOtroAnimal: () => void;
-  /** "Tomar otra foto": goes back to the photo step of the same animal (weighings are immutable, nothing is discarded). */
-  onDescartar: () => void;
+  /** "Tomar otra": leaves the animal and starts the next capture of the session. Absent when the result is only consulted. */
+  onPesarOtroAnimal?: () => void;
+  /** "Tomar otra foto": goes back to the photo step of the same animal (weighings are immutable, nothing is discarded). Absent when the result is only consulted. */
+  onDescartar?: () => void;
 }
 
 export default function ResultadoPesaje({
@@ -52,9 +52,11 @@ export default function ResultadoPesaje({
         <p className="mt-1">{resultado.captura.motivo_fallo}</p>
         <p className="mt-1">Registrá una nueva captura para volver a intentarlo.</p>
       </Notice>
-      <Button size="lg" onClick={onPesarOtroAnimal} className="mt-6 w-full">
-        Pesar otro animal
-      </Button>
+      {onPesarOtroAnimal && (
+        <Button size="lg" onClick={onPesarOtroAnimal} className="mt-6 w-full">
+          Pesar otro animal
+        </Button>
+      )}
     </section>
   );
 }
@@ -147,22 +149,24 @@ function PesoEstimado({
                 Confirmar y enviar
               </Button>
             )}
-            <Button
-              variant="secondary"
-              size="lg"
-              icon={Camera}
-              disabled={cargando}
-              onClick={onPesarOtroAnimal}
-              className="w-full"
-            >
-              Tomar otra
-            </Button>
+            {onPesarOtroAnimal && (
+              <Button
+                variant="secondary"
+                size="lg"
+                icon={Camera}
+                disabled={cargando}
+                onClick={onPesarOtroAnimal}
+                className="w-full"
+              >
+                Tomar otra
+              </Button>
+            )}
             {error && <Notice tone="danger">{error}</Notice>}
             <Notice tone="success">
               La medición ya está guardada en el historial del animal. Confirmarla solo registra tu
               revisión.
             </Notice>
-            {!confirmado && (
+            {!confirmado && onDescartar && (
               <Button
                 variant="ghost"
                 icon={RotateCcw}

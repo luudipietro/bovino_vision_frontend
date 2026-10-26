@@ -20,9 +20,9 @@ export default function SesionCapturaPage() {
           <ArrowLeft className="h-4 w-4" />
           Inicio de captura
         </Link>
-        <PageHeader title="Sesión de captura" subtitle="Las fotos que se tomaron en esta sesión y su estado." />
+        <PageHeader title="Sesión de captura" subtitle="Las fotos que se tomaron en esta sesión. Tocá una para ver su resultado." />
       </div>
-      <GaleriaSesion idSesion={id} version={0} vistasPrevias={SIN_VISTAS_PREVIAS} mostrarVacia />
+      <GaleriaSesion idSesion={id} version={0} vistasPrevias={SIN_VISTAS_PREVIAS} consulta />
     </div>
   );
 }

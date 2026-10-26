@@ -17,3 +17,8 @@ export function idAnimalDeConsulta(parametros: URLSearchParams): Uuid | null {
 export function rutaDeSesion(idSesion: Uuid): string {
   return `/captura/sesiones/${idSesion}`;
 }
+
+/** Result screen of one capture: the estimated weight, or why the estimation failed. */
+export function rutaDeResultado(idCaptura: Uuid): string {
+  return `/captura/capturas/${idCaptura}`;
+}
