@@ -23,9 +23,9 @@ export default function InicioCaptura({ nombre, onNuevaCaptura }: InicioCapturaP
   const [ahora] = useState(() => new Date());
 
   return (
-    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-8">
-      <div className="space-y-6">
-        <header className="flex items-end justify-between gap-3">
+    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:grid-rows-[auto_min-content_1fr] lg:gap-x-8">
+      <div className="space-y-6 lg:contents lg:space-y-0">
+        <header className="flex items-end justify-between gap-3 lg:col-start-1 lg:row-start-1">
           <div className="min-w-0">
             <p className="text-sm text-neutral-500">{saludoSegunHora(ahora)},</p>
             <h1 className="truncate text-2xl font-bold tracking-tight text-neutral-800">{nombre}</h1>
@@ -39,7 +39,7 @@ export default function InicioCaptura({ nombre, onNuevaCaptura }: InicioCapturaP
         <button
           type="button"
           onClick={onNuevaCaptura}
-          className="flex min-h-[92px] w-full items-center gap-4 rounded-[14px] bg-linear-to-br from-green-600 to-green-800 p-5 text-left text-white shadow-md transition-opacity hover:opacity-95 lg:min-h-[132px] lg:p-7"
+          className="flex min-h-[92px] w-full items-center gap-4 rounded-[14px] bg-linear-to-br from-green-600 to-green-800 p-5 text-left text-white shadow-md transition-opacity hover:opacity-95 lg:col-start-1 lg:row-start-2 lg:min-h-[132px] lg:p-7"
         >
           <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[14px] bg-white/15">
             <Camera className="h-7 w-7" />
@@ -69,7 +69,7 @@ const PASOS_DEL_PESAJE = [
 /** Desktop guide under the button: the four steps of a weighing. */
 function ComoSePesa() {
   return (
-    <section aria-labelledby="como-se-pesa" className="hidden md:block">
+    <section aria-labelledby="como-se-pesa" className="hidden md:block lg:col-start-1 lg:row-start-3">
       <h2 id="como-se-pesa" className="text-lg font-bold text-neutral-800">
         Cómo se pesa
       </h2>
@@ -95,8 +95,11 @@ function SesionesRecientes({ ahora }: { ahora: Date }) {
   const { sesiones, recargar } = useSesionesRecientes();
 
   return (
-    <section aria-labelledby="sesiones-recientes">
-      <div className="flex items-baseline justify-between gap-3">
+    <section
+      aria-labelledby="sesiones-recientes"
+      className="lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:grid lg:grid-rows-subgrid lg:self-stretch"
+    >
+      <div className="flex items-baseline justify-between gap-3 lg:self-end">
         <h2 id="sesiones-recientes" className="text-lg font-bold text-neutral-800">
           Sesiones recientes
         </h2>
@@ -111,7 +114,7 @@ function SesionesRecientes({ ahora }: { ahora: Date }) {
         )}
       </div>
 
-      <div className="mt-3">
+      <div className="mt-3 lg:row-span-2 lg:mt-0">
         {sesiones.estado === "cargando" && <Loading>Cargando sesiones…</Loading>}
 
         {sesiones.estado === "error" && (

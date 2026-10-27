@@ -14,6 +14,9 @@ Interfaz web de BovinoVision, construida con **React + Vite + Tailwind CSS** en
 
 El diseño visual (Montserrat, iconos Lucide, paleta del design system de BovinoVision
 definida como tokens en `src/index.css`) está descripto en `context.md`.
+En mobile, **Captura** ocupa el centro de la barra inferior con un botón circular verde
+levemente elevado y su ícono y texto blancos. Los otros módulos se reparten a ambos lados;
+solo aparecen las secciones habilitadas para el usuario. El menú de escritorio conserva su orden.
 
 ## Requisitos
 

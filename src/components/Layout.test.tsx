@@ -33,18 +33,69 @@ const sesion: Sesion = {
 };
 
 /** Desktop sidebar only; the mobile header always shows the full logo. */
-function renderizarSidebar(): string {
-  const html = renderToString(
+function renderizarLayout(permisos = sesion.permisos, ruta = "/captura"): string {
+  return renderToString(
     <ContextoSesion.Provider
-      value={{ cargando: false, sesion, iniciarSesion: async () => {}, cerrarSesion: async () => {} }}
+      value={{ cargando: false, sesion: { ...sesion, permisos }, iniciarSesion: async () => {}, cerrarSesion: async () => {} }}
     >
-      <MemoryRouter initialEntries={["/captura"]}>
+      <MemoryRouter initialEntries={[ruta]}>
         <Layout />
       </MemoryRouter>
     </ContextoSesion.Provider>,
   );
+}
+
+function renderizarSidebar(): string {
+  const html = renderizarLayout();
   return html.slice(html.indexOf("<aside"), html.indexOf("</aside>"));
 }
+
+function navbarMovil(permisos = sesion.permisos, ruta = "/captura") {
+  const html = renderizarLayout(permisos, ruta);
+  return html.slice(html.lastIndexOf("<nav"), html.lastIndexOf("</nav>") + 6);
+}
+
+describe("Layout mobile", () => {
+  const permisos = ["capturas_registrar", "rodeo_consultar", "analitica_consultar"] as Sesion["permisos"];
+
+  it("ubica Captura en el centro y conserva el orden de las otras secciones", () => {
+    const html = navbarMovil(permisos);
+    expect([...html.matchAll(/href="([^"]+)"/g)].map((m) => m[1])).toEqual([
+      "/animales", "/lotes", "/captura", "/panel", "/alertas",
+    ]);
+    expect(html).toContain("grid-cols-[1fr_auto_1fr]");
+    expect(html).toContain("md:hidden");
+  });
+
+  it.each(["/captura", "/animales"])("resalta Captura en verde y blanco también desde %s", (ruta) => {
+    const html = navbarMovil(permisos, ruta);
+    const enlace = html.match(/<a\b[^>]*href="\/captura"[^>]*>[\s\S]*?<\/a>/)?.[0] ?? "";
+    expect(enlace).toContain("rounded-full");
+    expect(enlace).toContain("bg-green-600");
+    expect(enlace).toContain("text-white");
+    expect(enlace).toContain("h-16 w-16");
+    expect(enlace).toContain("-translate-y-3");
+    expect(enlace).toContain("lucide-camera");
+    expect(enlace).toContain("Captura");
+  });
+
+  it("no agrega Captura para usuarios que no tienen ese módulo", () => {
+    const html = navbarMovil(["rodeo_consultar", "analitica_consultar"], "/animales");
+    expect(html).not.toContain('href="/captura"');
+    expect([...html.matchAll(/href="([^"]+)"/g)].map((m) => m[1])).toEqual([
+      "/animales", "/lotes", "/panel", "/alertas",
+    ]);
+    expect(html).toContain('aria-current="page"');
+  });
+
+  it("mantiene el orden del menú de escritorio", () => {
+    const html = renderizarLayout(permisos);
+    const sidebar = html.slice(html.indexOf("<aside"), html.indexOf("</aside>"));
+    expect([...sidebar.matchAll(/href="([^"]+)"/g)].map((m) => m[1])).toEqual([
+      "/captura", "/animales", "/lotes", "/panel", "/alertas",
+    ]);
+  });
+});
 
 describe("Layout sidebar", () => {
   beforeEach(() => {

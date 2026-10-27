@@ -76,6 +76,72 @@ function DateTimePill() {
   );
 }
 
+type ItemNavegacion = Seccion & { icon: LucideIcon };
+
+/** En mobile, Captura es la acción principal; los demás módulos mantienen su estado activo. */
+function EnlaceMovil({ item, destacada = false }: { item: ItemNavegacion; destacada?: boolean }) {
+  const { to, label, icon: Icon } = item;
+  if (destacada) {
+    return (
+      <NavLink
+        to={to}
+        className={({ isActive }) =>
+          `flex h-16 w-16 -translate-y-3 flex-col items-center justify-center gap-1 rounded-full bg-green-600 text-[11px] font-semibold text-white ring-4 ring-white transition-colors hover:bg-green-700 active:bg-green-800 ${
+            isActive ? "shadow-lg outline-2 outline-offset-4 outline-green-200" : "shadow-md"
+          }`
+        }
+      >
+        <Icon className="h-6 w-6" />
+        <span>{label}</span>
+      </NavLink>
+    );
+  }
+
+  return (
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        `flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-lg text-[10px] font-semibold transition-colors hover:bg-green-50 sm:text-[11px] ${
+          isActive ? "text-green-800" : "text-neutral-500"
+        }`
+      }
+    >
+      {({ isActive }) => (
+        <>
+          <span className={`flex h-8 w-10 items-center justify-center rounded-full ${isActive ? "bg-green-100" : ""}`}>
+            <Icon className="h-5 w-5" />
+          </span>
+          <span>{label}</span>
+        </>
+      )}
+    </NavLink>
+  );
+}
+
+function NavegacionMovil({ items }: { items: ItemNavegacion[] }) {
+  const captura = items.find((item) => item.to === "/captura");
+  const secundarias = items.filter((item) => item.to !== "/captura");
+  const mitad = Math.ceil(secundarias.length / 2);
+  const enlaces = (grupo: ItemNavegacion[]) => grupo.map((item) => <EnlaceMovil key={item.to} item={item} />);
+
+  return (
+    <nav
+      aria-label="Principal"
+      className={`fixed inset-x-0 bottom-0 z-20 h-[calc(4rem+env(safe-area-inset-bottom))] items-center border-t border-neutral-200 bg-white px-1 pb-[env(safe-area-inset-bottom)] md:hidden ${
+        captura ? "grid grid-cols-[1fr_auto_1fr] gap-2" : "flex justify-around"
+      }`}
+    >
+      {captura ? (
+        <>
+          <div className="flex min-w-0 items-center">{enlaces(secundarias.slice(0, mitad))}</div>
+          <EnlaceMovil item={captura} destacada />
+          <div className="flex min-w-0 items-center">{enlaces(secundarias.slice(mitad))}</div>
+        </>
+      ) : enlaces(items)}
+    </nav>
+  );
+}
+
 export default function Layout() {
   const { sesion, cerrarSesion } = useSesion();
   const [colapsada, alternarSidebar] = useSidebarColapsada();
@@ -170,35 +236,7 @@ export default function Layout() {
           <Outlet />
         </main>
 
-        <nav
-          aria-label="Principal"
-          className="fixed inset-x-0 bottom-0 z-20 flex h-16 items-center justify-around border-t border-neutral-200 bg-white md:hidden"
-        >
-          {navItems.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                `flex min-w-14 flex-col items-center gap-0.5 text-[11px] font-semibold ${
-                  isActive ? "text-green-800" : "text-neutral-500"
-                }`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <span
-                    className={`flex h-8 w-12 items-center justify-center rounded-full transition-colors ${
-                      isActive ? "bg-green-100" : ""
-                    }`}
-                  >
-                    <Icon className="h-5 w-5" />
-                  </span>
-                  {label}
-                </>
-              )}
-            </NavLink>
-          ))}
-        </nav>
+        <NavegacionMovil items={navItems} />
       </div>
     </div>
   );
