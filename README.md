@@ -107,7 +107,17 @@ el navegador contra la API local.
   permiso `rodeo_gestionar`.
 - `GET /sesiones-captura?limite=N` lista las sesiones de captura del usuario, más nuevas
   primero, con `cantidad_capturas` y `cantidad_procesadas`: alimenta "Sesiones recientes" en
-  el inicio de la captura.
+  el inicio de la captura. El historial (`/captura/sesiones`) muestra 10 sesiones por página,
+  con botones **Anterior / Siguiente** y número de página. **Desde / Hasta** filtran por la
+  fecha de inicio en la zona horaria del navegador, incluyendo todo el día final; se puede
+  completar solo uno. El rango se aplica automáticamente al cambiar una fecha y vuelve a
+  la primera página; **Filtrar** permite reaplicarlo y **Limpiar filtros** restaura el
+  historial completo. La API recibe `desplazamiento` y los instantes
+  ISO 8601 `desde` (inclusivo) y `hasta` (exclusivo). Se pide una sesión adicional para saber
+  si hay página siguiente, sin acumular tarjetas ni descargar el historial entero. Al abrir
+  una sesión desde el historial, **Volver al historial** regresa a esa pantalla; desde
+  «Sesiones recientes» conserva **Inicio de captura**. El origen se mantiene al consultar
+  el resultado de una foto y volver a la sesión.
 - Campos calculados que usa la interfaz: `operario` (quién tomó la foto) en el pesaje y en el
   historial de pesajes, `gmd_kg_dia` (GMD entre los dos últimos pesajes) en cada animal, y
   `ultimo_acceso` en cada usuario.

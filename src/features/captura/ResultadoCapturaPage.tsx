@@ -1,6 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { obtenerAnimal } from "../../api/animales";
 import { confirmarCaptura, obtenerCaptura } from "../../api/capturas";
 import { mensajeDeError } from "../../api/client";
@@ -21,6 +21,7 @@ const esperar = () => new Promise<void>((resolve) => setTimeout(resolve, INTERVA
 /** Result screen of a past capture, opened from its session: the last step of the capture flow, without its actions. */
 export default function ResultadoCapturaPage() {
   const { id } = useParams<{ id: string }>();
+  const ubicacion = useLocation();
   const [captura, setCaptura] = useState<Captura | null>(null);
   const [resultado, setResultado] = useState<ResultadoCaptura | null>(null);
   const [animal, setAnimal] = useState<Animal | null>(null);
@@ -93,6 +94,7 @@ export default function ResultadoCapturaPage() {
       <div className="space-y-3">
         <Link
           to={captura ? rutaDeSesion(captura.id_sesion) : "/captura"}
+          state={{ desdeHistorial: ubicacion.state?.desdeHistorial === true }}
           className="-ml-3 inline-flex items-center gap-2 rounded-[10px] px-3 py-2 text-sm font-medium text-neutral-800 hover:bg-neutral-100"
         >
           <ArrowLeft className="h-4 w-4" />

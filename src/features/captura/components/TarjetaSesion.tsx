@@ -1,17 +1,19 @@
 import { Camera, ChevronRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import type { SesionReciente } from "../../../api/tipos";
 import Badge from "../../../components/Badge";
 import Card from "../../../components/Card";
-import { rutaDeSesion } from "../rutaDeCaptura";
+import { RUTA_HISTORIAL_SESIONES, rutaDeSesion } from "../rutaDeCaptura";
 import { resumirSesion } from "../sesionesRecientes";
 
 /** One capture session in a list; it opens the session detail. */
 export default function TarjetaSesion({ sesion, ahora }: { sesion: SesionReciente; ahora: Date }) {
   const { detalle, cuando, enCurso } = resumirSesion(sesion, ahora);
+  const { pathname } = useLocation();
   return (
     <Link
       to={rutaDeSesion(sesion.id)}
+      state={{ desdeHistorial: pathname === RUTA_HISTORIAL_SESIONES }}
       className="block rounded-[14px] transition-colors [&>div]:hover:border-green-300 [&>div]:hover:bg-green-50"
     >
       <Card className="flex items-center gap-3 p-4 md:p-4">

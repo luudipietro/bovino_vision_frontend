@@ -4,10 +4,15 @@ import type { Captura, CapturaDeSesion, SesionCaptura, SesionReciente, Uuid } fr
 /**
  * Sessions of the current user, newest first; `limite` goes from 1 to 20 (API default 5) and
  * `desplazamiento` skips that many of the newest, to page through the history.
+ * `fechas` filtra por inicio: desde inclusivo, hasta exclusivo, en ISO 8601 con zona.
  */
-export function listarSesionesRecientes(limite?: number, desplazamiento?: number): Promise<SesionReciente[]> {
+export function listarSesionesRecientes(
+  limite?: number,
+  desplazamiento?: number,
+  fechas: { desde?: string; hasta?: string } = {},
+): Promise<SesionReciente[]> {
   return apiGet(
-    `/sesiones-captura${query({ limite: limite?.toString(), desplazamiento: desplazamiento?.toString() })}`,
+    `/sesiones-captura${query({ limite: limite?.toString(), desplazamiento: desplazamiento?.toString(), ...fechas })}`,
   );
 }
 

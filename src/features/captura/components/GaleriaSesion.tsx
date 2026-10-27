@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { listarCapturasDeSesion } from "../../../api/capturas";
 import { mensajeDeError } from "../../../api/client";
 import type { CapturaDeSesion, Uuid } from "../../../api/tipos";
@@ -24,6 +24,7 @@ interface GaleriaSesionProps {
 
 /** Photos of a capture session (CU-13). */
 export default function GaleriaSesion({ idSesion, version, vistasPrevias, consulta = false }: GaleriaSesionProps) {
+  const ubicacion = useLocation();
   const [capturas, setCapturas] = useState<CapturaDeSesion[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -104,6 +105,7 @@ export default function GaleriaSesion({ idSesion, version, vistasPrevias, consul
               {consulta ? (
                 <Link
                   to={rutaDeResultado(captura.id)}
+                  state={{ desdeHistorial: ubicacion.state?.desdeHistorial === true }}
                   className="block h-full transition-colors hover:bg-green-50"
                 >
                   {contenido}
