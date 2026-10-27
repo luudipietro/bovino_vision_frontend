@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { idAnimalDeConsulta, rutaDeCapturaParaAnimal, rutaDeResultado, rutaDeSesion } from "./rutaDeCaptura";
+import {
+  idAnimalDeConsulta,
+  RUTA_HISTORIAL_SESIONES,
+  rutaDeCapturaParaAnimal,
+  rutaDeResultado,
+  rutaDeSesion,
+} from "./rutaDeCaptura";
 
 describe("rutaDeCapturaParaAnimal", () => {
   it("opens the capture page with the animal in the `animal` query parameter", () => {
@@ -38,5 +44,11 @@ describe("rutaDeSesion", () => {
 describe("rutaDeResultado", () => {
   it("opens the result of one capture under /captura/capturas", () => {
     expect(rutaDeResultado("9a1c")).toBe("/captura/capturas/9a1c");
+  });
+});
+
+describe("RUTA_HISTORIAL_SESIONES", () => {
+  it("lists every capture session under /captura/sesiones", () => {
+    expect(RUTA_HISTORIAL_SESIONES).toBe("/captura/sesiones");
   });
 });

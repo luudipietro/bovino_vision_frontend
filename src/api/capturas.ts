@@ -1,9 +1,14 @@
 import { apiDelete, apiGet, apiPostForm, apiPostJson, query } from "./client";
 import type { Captura, CapturaDeSesion, SesionCaptura, SesionReciente, Uuid } from "./tipos";
 
-/** Sessions of the current user, newest first; `limite` goes from 1 to 20 (API default 5). */
-export function listarSesionesRecientes(limite?: number): Promise<SesionReciente[]> {
-  return apiGet(`/sesiones-captura${query({ limite: limite?.toString() })}`);
+/**
+ * Sessions of the current user, newest first; `limite` goes from 1 to 20 (API default 5) and
+ * `desplazamiento` skips that many of the newest, to page through the history.
+ */
+export function listarSesionesRecientes(limite?: number, desplazamiento?: number): Promise<SesionReciente[]> {
+  return apiGet(
+    `/sesiones-captura${query({ limite: limite?.toString(), desplazamiento: desplazamiento?.toString() })}`,
+  );
 }
 
 export function iniciarSesionCaptura(): Promise<SesionCaptura> {
