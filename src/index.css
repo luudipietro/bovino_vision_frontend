@@ -1,9 +1,88 @@
 @import "tailwindcss";
 
+/*
+ * Visual language copied from the ZOCO Figma (Montserrat, Lucide icons, dark KPI tiles,
+ * card rows) painted with the BovinoVision design system palette. Tailwind's default
+ * colors are removed so only design-system colors can be used.
+ */
 @theme {
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+
+  --color-*: initial;
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  /* Green: field and brand; the action color. */
+  --color-green-50: #f1f7f3;
+  --color-green-100: #e3f0e8;
+  --color-green-200: #c2e0cd;
+  --color-green-300: #8cc7a0;
+  --color-green-400: #57a874;
+  --color-green-500: #2f8a52;
+  --color-green-600: #0e703f;
+  --color-green-700: #1d5738;
+  --color-green-800: #12452c;
+  --color-green-900: #0b3a24;
+
+  /* Brown: cattle and soil; never an action color. */
+  --color-brown-100: #f0e5d9;
+  --color-brown-200: #e0cbb6;
+  --color-brown-300: #c6a184;
+  --color-brown-400: #a87c57;
+  --color-brown-500: #8a5d3b;
+  --color-brown-600: #6f4a2c;
+  --color-brown-700: #563820;
+  --color-brown-800: #3e2a18;
+
+  --color-cream: #f4f3ee;
+  --color-cream-deep: #e8e6dc;
+
+  --color-terracotta-100: #f3e8e0;
+  --color-terracotta-200: #e0c6b6;
+  --color-terracotta-500: #ab6641;
+  --color-terracotta-600: #8f5334;
+
+  /* Neutrals warmed toward cream. */
+  --color-neutral-50: #fafaf8;
+  --color-neutral-100: #f1f1ec;
+  --color-neutral-200: #e2e2db;
+  --color-neutral-300: #cbcbc2;
+  --color-neutral-400: #a3a39a;
+  --color-neutral-500: #7c7c73;
+  --color-neutral-600: #5c5c55;
+  --color-neutral-700: #42423d;
+  --color-neutral-800: #2b2b27;
+  --color-neutral-900: #1a1a17;
+
+  --color-success-500: #2f8a52;
+  --color-success-bg: #e3f0e8;
+  --color-success-text: #12452c;
+  --color-warning-500: #d9822b;
+  --color-warning-bg: #fbeedc;
+  --color-warning-text: #6e3f0c;
+  --color-danger-500: #b3372a;
+  --color-danger-bg: #fbe7e3;
+  --color-danger-text: #712016;
+  --color-info-500: #2b6f86;
+  --color-info-bg: #e2eff3;
+  --color-info-text: #113844;
+
+  /* Shadows are tinted with deep green, never pure black. */
+  --shadow-xs: 0 1px 2px rgba(29, 87, 56, 0.06);
+  --shadow-sm: 0 1px 3px rgba(29, 87, 56, 0.08), 0 1px 2px rgba(29, 87, 56, 0.04);
+  --shadow-md: 0 4px 12px rgba(29, 87, 56, 0.1);
+  --shadow-lg: 0 12px 28px rgba(29, 87, 56, 0.14);
+
+  --ease-standard: cubic-bezier(0.2, 0.6, 0.2, 1);
 }
 
 body {
-  background-color: #f7f7f3;
+  background-color: var(--color-cream);
+  color: var(--color-neutral-800);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-green-500);
+  outline-offset: 2px;
 }

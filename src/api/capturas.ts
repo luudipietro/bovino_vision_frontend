@@ -1,0 +1,61 @@
+import { apiDelete, apiGet, apiPostForm, apiPostJson, query } from "./client";
+import type { Captura, CapturaDeSesion, SesionCaptura, SesionReciente, Uuid } from "./tipos";
+
+/**
+ * Sessions of the current user, newest first; `limite` goes from 1 to 20 (API default 5) and
+ * `desplazamiento` skips that many of the newest, to page through the history.
+ * `fechas` filtra por inicio: desde inclusivo, hasta exclusivo, en ISO 8601 con zona.
+ */
+export function listarSesionesRecientes(
+  limite?: number,
+  desplazamiento?: number,
+  fechas: { desde?: string; hasta?: string } = {},
+): Promise<SesionReciente[]> {
+  return apiGet(
+    `/sesiones-captura${query({ limite: limite?.toString(), desplazamiento: desplazamiento?.toString(), ...fechas })}`,
+  );
+}
+
+export function iniciarSesionCaptura(): Promise<SesionCaptura> {
+  return apiPostJson("/sesiones-captura");
+}
+
+/** Closes the session: no more photos can be added; estimations already requested keep running. */
+export function finalizarSesionCaptura(idSesion: Uuid): Promise<SesionCaptura> {
+  return apiPostJson(`/sesiones-captura/${idSesion}/finalizar`);
+}
+
+/** Registers the photo; the API answers 422 when the image is not acceptable. */
+export function subirCaptura({
+  idSesion,
+  idAnimal,
+  archivo,
+}: {
+  idSesion: Uuid;
+  idAnimal: Uuid;
+  archivo: File;
+}): Promise<Captura> {
+  const formData = new FormData();
+  formData.append("id_sesion", idSesion);
+  formData.append("id_animal", idAnimal);
+  formData.append("imagen", archivo);
+  return apiPostForm("/capturas", formData);
+}
+
+export function obtenerCaptura(idCaptura: Uuid): Promise<Captura> {
+  return apiGet(`/capturas/${idCaptura}`);
+}
+
+/** Operator acknowledges the result (CU-15); it never changes the weighing event. */
+export function confirmarCaptura(idCaptura: Uuid): Promise<Captura> {
+  return apiPostJson(`/capturas/${idCaptura}/confirmar`);
+}
+
+/** Discards a photo that was not sent to estimation (204); the API answers 422 for any other state. */
+export function descartarCaptura(idCaptura: Uuid): Promise<void> {
+  return apiDelete(`/capturas/${idCaptura}`);
+}
+
+export function listarCapturasDeSesion(idSesion: Uuid): Promise<CapturaDeSesion[]> {
+  return apiGet(`/sesiones-captura/${idSesion}/capturas`);
+}
